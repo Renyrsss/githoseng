@@ -1,0 +1,697 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>NNMCreport</title>
+        <link rel="stylesheet" href="./css/style.css" />
+        <link
+            rel="shortcut icon"
+            href="./img/favicon.ico"
+            type="image/x-icon"
+        />
+        <link
+            href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
+            rel="stylesheet"
+            integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN"
+            crossorigin="anonymous"
+        />
+    </head>
+    <body>
+        <div class="wrapper">
+            <div class="header">
+                <div class="container">
+                    <div class="header__img">
+                        <img
+                            src="./img/img_af1cc9b0864226a26aa458ca4754a1e5.png"
+                            alt=""
+                        />
+                    </div>
+
+                    <div class="header__title">
+                        <p>
+                            Добро пожаловать на сайт HelpDesk нашей медицинской
+                            клиники! Вы можете оставить заявку, наши сотрудники
+                            обработают ее в кратчайшие сроки. Благодарим за
+                            Терпение .
+                        </p>
+                    </div>
+                    <div class="header__title">
+                        <a href="http://192.168.101.25:8080/"
+                            ><button class="btn__submitStyle">
+                                Перейти на Хелп Деск для IT
+                            </button></a
+                        >
+                        <a href="http://192.168.101.25:8081/"
+                            ><button class="btn__submitStyle">
+                                Перейти на Хелп Деск для мед оборудования
+                            </button></a
+                        >
+                    </div>
+                </div>
+            </div>
+            <main class="">
+                <div class="container">
+                    <div class="main__first">
+                        <div class="main__search">
+                            <input
+                                type="number"
+                                class="main__searchInput"
+                                placeholder="Введите ваш номер телефона для вывода статуса заявки"
+                            />
+                        </div>
+
+                        <section class="main__catalog"></section>
+                    </div>
+                </div>
+            </main>
+
+            <section class="columns">
+                <div class="container">
+                    <div class="columns__row">
+                        <div class="columns__column">
+                            <form class="main__first checkedOrNot">
+                                <p class="main__firstQuestion">
+                                    выберите категорию / Санатты таңданыз
+                                </p>
+                                <div>
+                                    <div
+                                        class="accordion accordion-flush"
+                                        id="accordionFlushExample"
+                                    >
+                                        <div class="accordion-item">
+                                            <h2 class="accordion-header">
+                                                <button
+                                                    class="accordion-button collapsed"
+                                                    type="button"
+                                                    data-bs-toggle="collapse"
+                                                    data-bs-target="#flush-collapseOne"
+                                                    aria-expanded="false"
+                                                    aria-controls="flush-collapseOne"
+                                                >
+                                                    Сантехники
+                                                </button>
+                                            </h2>
+                                            <div
+                                                id="flush-collapseOne"
+                                                class="accordion-collapse collapse"
+                                                data-bs-parent="#accordionFlushExample"
+                                            >
+                                                <div class="accordion-body">
+                                                    <p class="inputMar">
+                                                        <input
+                                                            type="radio"
+                                                            name="report"
+                                                            value="Демонтаж и замена унитаза (установка)"
+                                                            id="santehniks1"
+                                                            class="radioInput"
+                                                        />
+                                                        <label for="santehniks1"
+                                                            >Демонтаж и замена
+                                                            унитаза
+                                                            (установка)</label
+                                                        >
+                                                        <br />
+                                                    </p>
+
+                                                    <p class="inputMar">
+                                                        <input
+                                                            type="radio"
+                                                            name="report"
+                                                            value="Демонтаж и замена раковины (установка)"
+                                                            id="santehniks2"
+                                                            class="radioInput"
+                                                        />
+                                                        <label for="santehniks2"
+                                                            >Демонтаж и замена
+                                                            раковины
+                                                            (установка)</label
+                                                        >
+                                                        <br />
+                                                    </p>
+
+                                                    <p class="inputMar">
+                                                        <input
+                                                            type="radio"
+                                                            name="report"
+                                                            value="Демонтаж и замена смесителя "
+                                                            id="santehniks3"
+                                                            class="radioInput"
+                                                        />
+                                                        <label for="santehniks3"
+                                                            >Демонтаж и замена
+                                                            смесителя</label
+                                                        ><br />
+                                                    </p>
+
+                                                    <p class="inputMar">
+                                                        <input
+                                                            type="radio"
+                                                            name="report"
+                                                            value="Демонтаж и замена гофры для смесителя"
+                                                            id="santehniks4"
+                                                            class="radioInput"
+                                                        />
+                                                        <label for="santehniks4"
+                                                            >Демонтаж и замена
+                                                            гофры для
+                                                            смесителя</label
+                                                        ><br />
+                                                    </p>
+
+                                                    <p class="inputMar">
+                                                        <input
+                                                            type="radio"
+                                                            name="report"
+                                                            value="Чистка аэраторов"
+                                                            id="santehniks5"
+                                                            class="radioInput"
+                                                        />
+                                                        <label for="santehniks5"
+                                                            >Чистка
+                                                            аэраторов</label
+                                                        >
+                                                    </p>
+
+                                                    <hr />
+                                                    <p class="inputMar">
+                                                        <input
+                                                            type="radio"
+                                                            name="report"
+                                                            value="Чистка гребенки ХВС и ГВС"
+                                                            id="santehniks6"
+                                                            class="radioInput"
+                                                        />
+                                                        <label for="santehniks6"
+                                                            >Чистка гребенки ХВС
+                                                            и ГВС</label
+                                                        ><br />
+                                                    </p>
+                                                    <p class="inputMar">
+                                                        <input
+                                                            type="radio"
+                                                            name="report"
+                                                            value="Чистка и заделка швов сантехническим силиконом"
+                                                            id="santehniks7"
+                                                            class="radioInput"
+                                                        />
+                                                        <label for="santehniks7"
+                                                            >Чистка и заделка
+                                                            швов сантехническим
+                                                            силиконом</label
+                                                        ><br />
+                                                    </p>
+
+                                                    <p class="inputMar">
+                                                        <input
+                                                            type="radio"
+                                                            name="report"
+                                                            value="Демонтаж и монтаж кранов "
+                                                            id="santehniks8"
+                                                            class="radioInput"
+                                                        />
+                                                        <label for="santehniks8"
+                                                            >Демонтаж и монтаж
+                                                            кранов</label
+                                                        ><br />
+                                                    </p>
+
+                                                    <p class="inputMar">
+                                                        <input
+                                                            type="radio"
+                                                            name="report"
+                                                            value="Демонтаж и монтаж радиаторов отопления"
+                                                            id="santehniks9"
+                                                            class="radioInput"
+                                                        />
+                                                        <label for="santehniks9"
+                                                            >Демонтаж и монтаж
+                                                            радиаторов
+                                                            отопления</label
+                                                        >
+                                                    </p>
+
+                                                    <p class="inputMar">
+                                                        <input
+                                                            type="radio"
+                                                            name="report"
+                                                            value="Прочистка канализационный труб"
+                                                            id="santehniks10"
+                                                            class="radioInput"
+                                                        />
+                                                        <label
+                                                            for="santehniks10"
+                                                            >Прочистка
+                                                            канализационный
+                                                            труб</label
+                                                        ><br />
+                                                    </p>
+
+                                                    <p class="inputMar">
+                                                        <input
+                                                            type="radio"
+                                                            name="report"
+                                                            value="Демонтаж и замена шланги для смесителя"
+                                                            id="santehniks11"
+                                                            class="radioInput"
+                                                        />
+                                                        <label for="santehniks11"
+                                                            >Демонтаж и замена
+                                                            шланги для
+                                                            смесителя</label
+                                                        ><br />
+                                                    </p>
+                                                    <hr />
+                                                    <p class="inputMar">
+                                                        <input
+                                                            type="radio"
+                                                            name="report"
+                                                            value="Демонтаж и замена шланги для унитаза"
+                                                            id="santehniks12"
+                                                            class="radioInput"
+                                                        />
+                                                        <label
+                                                            for="santehniks12"
+                                                            >Демонтаж и замена
+                                                            шланги для
+                                                            унитаза</label
+                                                        >
+                                                    </p>
+                                                    <p class="inputMar">
+                                                        <input
+                                                            type="radio"
+                                                            name="report"
+                                                            value="Демонтаж-и-монтаж-арматуры"
+                                                            id="santehniks13"
+                                                            class="radioInput"
+                                                        />
+                                                        <label
+                                                            for="santehniks13"
+                                                            >Демонтаж и монтаж
+                                                            арматуры,бочков
+                                                            унитаза</label
+                                                        >
+                                                    </p>
+
+                                                    <p class="inputMar">
+                                                        <input
+                                                            type="radio"
+                                                            name="report"
+                                                            value="Прочистка слива раковины, душевых кабин."
+                                                            id="santehniks14"
+                                                            class="radioInput"
+                                                        />
+                                                        <label
+                                                            for="santehniks14"
+                                                            >Прочистка слива
+                                                            раковины, душевых
+                                                            кабин.</label
+                                                        >
+                                                    </p>
+                                                    <p class="inputMar">
+                                                        <input
+                                                            type="radio"
+                                                            name="report"
+                                                            value="Ежедневная обслуга парагенератора"
+                                                            id="santehniks15"
+                                                            class="radioInput"
+                                                        />
+                                                        <label
+                                                            for="santehniks15"
+                                                            >Ежедневная обслуга
+                                                            парагенератора</label
+                                                        >
+                                                    </p>
+
+                                                    <p class="inputMar">
+                                                        <input
+                                                            type="radio"
+                                                            name="report"
+                                                            value="Обслуживание тепловых станций"
+                                                            id="santehniks16"
+                                                            class="radioInput"
+                                                        />
+                                                        <label
+                                                            for="santehniks16"
+                                                            >Обслуживание
+                                                            тепловых
+                                                            станций</label
+                                                        >
+                                                    </p>
+
+                                                    <p class="inputMar">
+                                                        <input
+                                                            type="radio"
+                                                            name="report"
+                                                            value="Обслуживание сетей ХВС и ГВС, теплоснабжение"
+                                                            id="santehniks17"
+                                                            class="radioInput"
+                                                        />
+                                                        <label
+                                                            for="santehniks17"
+                                                            >Обслуживание сетей
+                                                            ХВС и ГВС,
+                                                            теплоснабжение</label
+                                                        >
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="accordion-item">
+                                            <h2 class="accordion-header">
+                                                <button
+                                                    class="accordion-button collapsed"
+                                                    type="button"
+                                                    data-bs-toggle="collapse"
+                                                    data-bs-target="#flush-collapseTwo"
+                                                    aria-expanded="false"
+                                                    aria-controls="flush-collapseTwo"
+                                                >
+                                                    Электрики
+                                                </button>
+                                            </h2>
+                                            <div
+                                                id="flush-collapseTwo"
+                                                class="accordion-collapse collapse"
+                                                data-bs-parent="#accordionFlushExample"
+                                            >
+                                                <div class="accordion-body">
+                                                    <p class="inputMar">
+                                                        <input
+                                                            type="radio"
+                                                            name="report"
+                                                            value="Демонтаж и замена выкючателя"
+                                                            id="elektriks1"
+                                                            class="radioInput"
+                                                        />
+                                                        <label for="elektriks1"
+                                                            >Демонтаж и замена
+                                                            выкючателя</label
+                                                        >
+                                                        <br />
+                                                    </p>
+
+                                                    <p class="inputMar">
+                                                        <input
+                                                            type="radio"
+                                                            name="report"
+                                                            value="Демонтаж и замена розетки"
+                                                            id="elektriks2"
+                                                            class="radioInput"
+                                                        />
+                                                        <label for="elektriks2"
+                                                            >Демонтаж и замена
+                                                            розетки</label
+                                                        >
+                                                        <br />
+                                                    </p>
+
+                                                    <p class="inputMar">
+                                                        <input
+                                                            type="radio"
+                                                            name="report"
+                                                            value="Демонтаж и замена светильника"
+                                                            id="elektriks3"
+                                                            class="radioInput"
+                                                        />
+                                                        <label for="elektriks3"
+                                                            >Демонтаж и замена
+                                                            светильника</label
+                                                        ><br />
+                                                    </p>
+
+                                                    <p class="inputMar">
+                                                        <input
+                                                            type="radio"
+                                                            name="report"
+                                                            value="Демонтаж и замена автомата"
+                                                            id="elektriks4"
+                                                            class="radioInput"
+                                                        />
+                                                        <label for="elektriks4"
+                                                            >Демонтаж и замена
+                                                            автомата</label
+                                                        ><br />
+                                                    </p>
+
+                                                    <p class="inputMar">
+                                                        <input
+                                                            type="radio"
+                                                            name="report"
+                                                            value="Своевременное устранение неисправности электооборудования и технического оснащения здания"
+                                                            id="elektriks5"
+                                                            class="radioInput"
+                                                        />
+                                                        <label for="elektriks5"
+                                                            >Своевременное
+                                                            устранение
+                                                            неисправности
+                                                            электооборудования и
+                                                            технического
+                                                            оснащения
+                                                        >
+                                                    </p>
+
+                                                    <hr />
+                                                    <p class="inputMar">
+                                                        <input
+                                                            type="radio"
+                                                            name="report"
+                                                            value="Ремонт электрооборудования"
+                                                            id="elektriks7"
+                                                            class="radioInput"
+                                                        />
+                                                        <label for="elektriks7"
+                                                            >Ремонт
+                                                            электрооборудования</label
+                                                        ><br />
+                                                    </p>
+                                                    <p class="inputMar">
+                                                        <input
+                                                            type="radio"
+                                                            name="report"
+                                                            value="Демонтаж и монтаж электрооборудования"
+                                                            id="elektriks8"
+                                                            class="radioInput"
+                                                        />
+                                                        <label for="elektriks8"
+                                                            >Демонтаж и монтаж
+                                                            электрооборудования</label
+                                                        ><br />
+                                                    </p>
+
+                                                    <p class="inputMar">
+                                                        <input
+                                                            type="radio"
+                                                            name="report"
+                                                            value="Диагностика неисправности электрооборудования"
+                                                            id="elektriks9"
+                                                            class="radioInput"
+                                                        />
+                                                        <label for="elektriks9"
+                                                            >Диагностика
+                                                            неисправности
+                                                            электрооборудования</label
+                                                        ><br />
+                                                    </p>
+
+                                                    <p class="inputMar">
+                                                        <input
+                                                            type="radio"
+                                                            name="report"
+                                                            value="Контроль температуры в помещении ИБП"
+                                                            id="elektriks10"
+                                                            class="radioInput"
+                                                        />
+                                                        <label for="elektriks10"
+                                                            >Контроль
+                                                            температуры в
+                                                            помещении ИБП</label
+                                                        >
+                                                    </p>
+
+                                                    <p class="inputMar">
+                                                        <input
+                                                            type="radio"
+                                                            name="report"
+                                                            value="Ежедневный обход по объекту:ДГУ.РУ."
+                                                            id="elektriks11"
+                                                            class="radioInput"
+                                                        />
+                                                        <label for="elektriks11"
+                                                            >Ежедневный обход по
+                                                            объекту:ДГУ.РУ.</label
+                                                        ><br />
+                                                    </p>
+
+                                                    <p class="inputMar">
+                                                        <input
+                                                            type="radio"
+                                                            name="report"
+                                                            value="Ежедневный обход щитовых:МДВ 1,2,3,4,"
+                                                            id="elektriks12"
+                                                            class="radioInput"
+                                                        />
+                                                        <label for="elektriks12"
+                                                            >Ежедневный обход
+                                                            щитовых:МДВ
+                                                            1,2,3,4,</label
+                                                        ><br />
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="accordion-item">
+                                            <h2 class="accordion-header">
+                                                <button
+                                                    class="accordion-button collapsed"
+                                                    type="button"
+                                                    data-bs-toggle="collapse"
+                                                    data-bs-target="#flush-collapseThree"
+                                                    aria-expanded="false"
+                                                    aria-controls="flush-collapseThree"
+                                                >
+                                                    Вентиляция
+                                                </button>
+                                            </h2>
+                                            <div
+                                                id="flush-collapseThree"
+                                                class="accordion-collapse collapse"
+                                                data-bs-parent="#accordionFlushExample"
+                                            >
+                                                <div class="accordion-body">
+                                                    <p class="inputMar">
+                                                        <input
+                                                            type="radio"
+                                                            name="report"
+                                                            value="Обход плантронов 1-5, 3,4,6"
+                                                            id="плантронов"
+                                                            class="radioInput"
+                                                        />
+                                                        <label for="плантронов"
+                                                            >Обход плантронов
+                                                            1-5, 3,4,6</label
+                                                        >
+                                                        <br />
+                                                    </p>
+
+                                                    <p class="inputMar">
+                                                        <input
+                                                            type="radio"
+                                                            name="report"
+                                                            value="Обход прачечной"
+                                                            id="прачечной"
+                                                            class="radioInput"
+                                                        />
+                                                        <label for="прачечной"
+                                                            >Обход
+                                                            прачечной</label
+                                                        >
+                                                        <br />
+                                                    </p>
+
+                                                    <p class="inputMar">
+                                                        <input
+                                                            type="radio"
+                                                            name="report"
+                                                            value="Обход Микробиологии и Патоморфологии"
+                                                            id="Обход-Микробиологии"
+                                                            class="radioInput"
+                                                        />
+                                                        <label
+                                                            for="Обход-Микробиологии"
+                                                            >Обход Микробиологии
+                                                            и
+                                                            Патоморфологии</label
+                                                        >
+                                                        <br />
+                                                    </p>
+
+                                                    <p class="inputMar">
+                                                        <input
+                                                            type="radio"
+                                                            name="report"
+                                                            value="Замена синтипона на приточных машинах "
+                                                            id="синтипона"
+                                                            class="radioInput"
+                                                        />
+                                                        <label for="синтипона"
+                                                            >Замена синтипона на
+                                                            приточных
+                                                            машинах</label
+                                                        >
+                                                        <br />
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                        <div class="columns__column">
+                            <form class="main__first">
+                                <input
+                                    class="main__inputs"
+                                    type="number"
+                                    placeholder="Введите номер : 777 777 77 77"
+                                />
+                            </form>
+
+                            <form class="main__first">
+                                <input
+                                    class="main__inputs"
+                                    type="text"
+                                    placeholder="Аты-Жөні / ФИО"
+                                />
+                            </form>
+
+                            <form class="main__first">
+                                <input
+                                    class="main__inputs"
+                                    type="text"
+                                    placeholder="Бөлімше / Отделение"
+                                />
+                            </form>
+
+                            <form class="main__first">
+                                <p>
+                                    Шағымның (оқиғаның) мазмұны <br />
+                                    Описание проблемы (инцидента)
+                                </p>
+
+                                <textarea name="comment" id=""></textarea>
+                            </form>
+
+                            <form class="btn">
+                                <button class="btn__submit">Отправить</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </section>
+            <!-- 
+        <section id="loading-overlay">
+            <div class="overlay">
+                <div class="overlay__img">
+                    <img src="./img/img_af1cc9b0864226a26aa458ca4754a1e5.png" alt="">
+                </div>
+                <p class="overlay__loading">Загрузка</p>
+            </div>
+        </section> -->
+
+            <section class="success">
+                <div class="success__img">
+                    <img src="./img/P1withCould2.png" alt="" />
+                </div>
+            </section>
+        </div>
+        <script
+            src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"
+            integrity="sha384-C6RzsynM9kWDrMNeT87bh95OGNyZPhcTNXj1NW7RuBCsyN/o0jlpcV8Qyq46cDfL"
+            crossorigin="anonymous"
+        ></script>
+        <script src="./js/axios.min.js"></script>
+        <script src="./js/app.js"></script>
+    </body>
+</html>
