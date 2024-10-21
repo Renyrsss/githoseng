@@ -32,14 +32,16 @@ document.addEventListener("DOMContentLoaded", function () {
                         admin = "/api/elektriks";
                         token =
                             "7539134948:AAGSRsFjbn_McxN_jkz3QpyM2EUcua-vK8s";
-                    } else if (item.id.includes("plotniks")) {
-                        CHAT_ID = -4169255350;
-                        console.log(item.value + " Baha");
-                        admin = "/api/plotniks";
                     } else if (item.id.includes("santehniks")) {
                         CHAT_ID = -4548047122;
                         console.log(item.value + " Ernar and TIMUR");
                         admin = "/api/santehniks";
+                        token =
+                            "7525962971:AAEoBGefK4e-PjIeNC24X_KY2u7eQU_rI0s";
+                    } else if (item.id.includes("ventel")) {
+                        CHAT_ID = -4587546685;
+                        console.log(item.value + " Ernar and TIMUR");
+                        admin = "/api/ventilyaczionshhiks";
                         token =
                             "7525962971:AAEoBGefK4e-PjIeNC24X_KY2u7eQU_rI0s";
                     }
