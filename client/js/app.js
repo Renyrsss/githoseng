@@ -3,6 +3,8 @@ document.addEventListener("DOMContentLoaded", function () {
     const tokenSan = "7539134948:AAGSRsFjbn_McxN_jkz3QpyM2EUcua-vK8s";
     let token = "";
     let CHAT_ID;
+    const CORP_HELPDESK_LEGACY_URL =
+        "http://192.168.101.25:12010/api/tickets/legacy/submit";
 
     let success = document.querySelector(".success");
     let successImg = document.querySelector(".success__img");
@@ -16,15 +18,28 @@ document.addEventListener("DOMContentLoaded", function () {
     let btn = document.querySelector(".btn__submit");
     let admin = null;
 
+    function postToCorpHelpdesk(payload) {
+        return axios
+            .post(CORP_HELPDESK_LEGACY_URL, payload)
+            .then((res) => {
+                console.log("Заявка продублирована в корп-систему", res.data);
+            })
+            .catch((err) => {
+                console.warn("Не удалось продублировать заявку в корп-систему", err);
+            });
+    }
+
     btn.addEventListener("click", (e) => {
         e.preventDefault();
         let res = checkInputs(inputs, textArea, checkedOrNot, radioInput);
         console.log(res);
         if (res) {
             let query;
+            let legacyCategoryId;
             radioInput.forEach((item) => {
                 if (item.checked) {
                     query = item.value;
+                    legacyCategoryId = item.id;
                     console.log(item);
                     if (item.id.includes("elektriks")) {
                         CHAT_ID = -4570318896;
@@ -54,17 +69,31 @@ document.addEventListener("DOMContentLoaded", function () {
             massage += `<b>Телеофн : ${inputs[0].value}</b>\n`;
             massage += `<b>Комментарий : ${textArea.value}</b>\n`;
             massage += `<b>Запрос : ${query}</b>\n`;
+            const legacyPayload = {
+                userName: inputs[1].value,
+                userPhone: inputs[0].value,
+                userSide: inputs[2].value,
+                userComment: textArea.value,
+                userQuery: query,
+                legacyCategoryId,
+                legacyEndpoint: admin,
+                serviceGroupSlug: "engineering",
+                departmentKey: "ENGINEERING",
+            };
+
             axios
                 .post(`http://192.168.101.25:1337${admin}`, {
                     data: {
-                        userName: inputs[1].value,
-                        userPhone: inputs[0].value,
-                        userSide: inputs[2].value,
-                        userComment: textArea.value,
-                        userQuery: query,
+                        userName: legacyPayload.userName,
+                        userPhone: legacyPayload.userPhone,
+                        userSide: legacyPayload.userSide,
+                        userComment: legacyPayload.userComment,
+                        userQuery: legacyPayload.userQuery,
                     },
                 })
                 .then((res) => {
+                    postToCorpHelpdesk(legacyPayload);
+
                     inputs.forEach((item) => (item.value = ""));
                     textArea.value = "";
                     success.style.display = "block";
@@ -234,6 +263,15 @@ async function getUsersQuery() {
     axios
         .get(
             "http://192.168.101.25:1337/api/plotniks?pagination[pageSize]=1000&sort=createdAt:desc"
+        )
+        .then(function (res) {
+            res.data["data"].map((item) => {
+                userObj.push(item.attributes);
+            });
+        });
+    axios
+        .get(
+            "http://192.168.101.25:1337/api/ventilyaczionshhiks?pagination[pageSize]=1000&sort=createdAt:desc"
         )
         .then(function (res) {
             res.data["data"].map((item) => {
