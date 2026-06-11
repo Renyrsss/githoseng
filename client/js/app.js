@@ -23,9 +23,6 @@ document.addEventListener("DOMContentLoaded", function () {
             .post(CORP_HELPDESK_LEGACY_URL, payload)
             .then((res) => {
                 console.log("Заявка продублирована в корп-систему", res.data);
-            })
-            .catch((err) => {
-                console.warn("Не удалось продублировать заявку в корп-систему", err);
             });
     }
 
@@ -81,8 +78,8 @@ document.addEventListener("DOMContentLoaded", function () {
                 departmentKey: "ENGINEERING",
             };
 
-            axios
-                .post(`http://192.168.101.25:1337${admin}`, {
+            Promise.all([
+                axios.post(`http://192.168.101.25:1337${admin}`, {
                     data: {
                         userName: legacyPayload.userName,
                         userPhone: legacyPayload.userPhone,
@@ -90,25 +87,19 @@ document.addEventListener("DOMContentLoaded", function () {
                         userComment: legacyPayload.userComment,
                         userQuery: legacyPayload.userQuery,
                     },
-                })
+                }),
+                postToCorpHelpdesk(legacyPayload),
+                axios.post(URI_API, {
+                    chat_id: CHAT_ID,
+                    parse_mode: "html",
+                    text: massage,
+                }),
+            ])
                 .then((res) => {
-                    postToCorpHelpdesk(legacyPayload);
-
                     inputs.forEach((item) => (item.value = ""));
                     textArea.value = "";
                     success.style.display = "block";
                     successImg.classList.add("successLoadingActive");
-
-                    axios
-                        .post(URI_API, {
-                            chat_id: CHAT_ID,
-                            parse_mode: "html",
-                            text: massage,
-                        })
-                        .then((res) => {})
-                        .catch((err) => {
-                            console.log(err);
-                        });
 
                     setTimeout(() => {
                         success.style.display = "none";
@@ -124,6 +115,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 })
                 .catch((err) => {
                     console.log(err);
+                    alert("Ошибка при отправке!");
                 });
         }
     });
