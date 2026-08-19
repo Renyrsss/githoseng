@@ -1,0 +1,576 @@
+/* Палитра взята с логотипа ННМЦ: синяя капля, зелёный лист, тёмно-синий контур. */
+:root {
+    --deep: #1c3f63;
+    --blue: #0a58c2;
+    --blue-soft: #e8f1fc;
+    --sky: #63b0d6;
+    --green: #4a8c22;
+    --green-soft: #eaf5e2;
+    --amber: #b7791f;
+    --amber-soft: #fdf3e0;
+    --red: #c0392b;
+    --red-soft: #fdecea;
+
+    --ink: #16273a;
+    --muted: #6b7f93;
+    --line: #dde6ef;
+    --surface: #ffffff;
+    --canvas: #f2f7fb;
+
+    --radius: 14px;
+    --radius-sm: 10px;
+    --shadow: 0 1px 2px rgba(28, 63, 99, 0.06), 0 8px 24px rgba(28, 63, 99, 0.08);
+    --shadow-sm: 0 1px 2px rgba(28, 63, 99, 0.08);
+}
+
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+}
+
+html {
+    -webkit-text-size-adjust: 100%;
+}
+
+body {
+    margin: 0;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+    font-size: 16px;
+    line-height: 1.5;
+    color: var(--ink);
+    background:
+        radial-gradient(900px 380px at 12% -8%, #e4f0f9 0%, transparent 60%),
+        radial-gradient(760px 320px at 92% 0%, #e9f4e4 0%, transparent 55%),
+        var(--canvas);
+}
+
+.container {
+    width: min(1180px, 100% - 32px);
+    margin: 0 auto;
+}
+
+/* ── Шапка ─────────────────────────────────────────────── */
+.topbar {
+    background: var(--surface);
+    border-bottom: 1px solid var(--line);
+    position: sticky;
+    top: 0;
+    z-index: 20;
+}
+
+.topbar__inner {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 12px 0;
+}
+
+.brand {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.brand__logo {
+    width: 46px;
+    height: 46px;
+    object-fit: contain;
+}
+
+.brand__title {
+    margin: 0;
+    font-size: 19px;
+    font-weight: 700;
+    letter-spacing: 0.01em;
+    color: var(--deep);
+}
+
+.brand__subtitle {
+    margin: 0;
+    font-size: 13px;
+    color: var(--muted);
+}
+
+.topbar__links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.linkbtn {
+    display: inline-flex;
+    align-items: center;
+    padding: 8px 14px;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    background: var(--surface);
+    color: var(--deep);
+    font-size: 14px;
+    text-decoration: none;
+    transition: border-color 0.15s, color 0.15s, background 0.15s;
+}
+
+.linkbtn:hover {
+    border-color: var(--sky);
+    background: var(--blue-soft);
+    color: var(--blue);
+}
+
+/* ── Каркас страницы ───────────────────────────────────── */
+.page {
+    flex: 1;
+    padding: 24px 0 40px;
+}
+
+.page__lead {
+    margin: 0 0 20px;
+    max-width: 70ch;
+    color: var(--muted);
+}
+
+.layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 20px;
+    align-items: start;
+}
+
+.panel {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 20px;
+}
+
+.panel--status {
+    margin-top: 20px;
+}
+
+.panel__head {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    margin-bottom: 16px;
+}
+
+.panel__head--tight {
+    margin-top: 22px;
+    padding-top: 18px;
+    border-top: 1px dashed var(--line);
+}
+
+.step {
+    flex: 0 0 auto;
+    width: 28px;
+    height: 28px;
+    display: grid;
+    place-items: center;
+    border-radius: 50%;
+    background: var(--blue);
+    color: #fff;
+    font-size: 14px;
+    font-weight: 700;
+}
+
+.step--muted {
+    background: var(--sky);
+}
+
+.panel__title {
+    margin: 0;
+    font-size: 17px;
+    font-weight: 650;
+    color: var(--deep);
+}
+
+.panel__hint {
+    margin: 2px 0 0;
+    font-size: 13px;
+    color: var(--muted);
+}
+
+/* ── Поля ──────────────────────────────────────────────── */
+.field {
+    width: 100%;
+    padding: 11px 14px;
+    font: inherit;
+    color: var(--ink);
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-sm);
+    transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.field::placeholder {
+    color: #9bacbd;
+}
+
+.field:focus {
+    outline: none;
+    border-color: var(--sky);
+    box-shadow: 0 0 0 3px rgba(99, 176, 214, 0.25);
+}
+
+.field--area {
+    resize: vertical;
+    min-height: 120px;
+}
+
+.field.is-invalid {
+    border-color: var(--red);
+    background: var(--red-soft);
+}
+
+.fieldRow {
+    display: block;
+    margin-bottom: 14px;
+}
+
+.fieldRow__label {
+    display: block;
+    margin-bottom: 6px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--deep);
+}
+
+.search {
+    margin-bottom: 12px;
+}
+
+/* ── Категории ─────────────────────────────────────────── */
+.categoryList {
+    border: 1px solid var(--line);
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+    max-height: 460px;
+    overflow-y: auto;
+}
+
+.categoryList.is-invalid {
+    border-color: var(--red);
+    box-shadow: 0 0 0 3px rgba(192, 57, 43, 0.12);
+}
+
+.categoryGroup + .categoryGroup {
+    border-top: 1px solid var(--line);
+}
+
+.categoryGroup__toggle {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 14px;
+    background: #f8fbfe;
+    border: 0;
+    font: inherit;
+    font-weight: 600;
+    color: var(--deep);
+    text-align: left;
+    cursor: pointer;
+}
+
+.categoryGroup__toggle:hover {
+    background: var(--blue-soft);
+}
+
+.categoryGroup__chevron {
+    width: 8px;
+    height: 8px;
+    border-right: 2px solid var(--muted);
+    border-bottom: 2px solid var(--muted);
+    transform: rotate(-45deg);
+    transition: transform 0.15s;
+}
+
+.categoryGroup.is-open .categoryGroup__chevron {
+    transform: rotate(45deg);
+}
+
+.categoryGroup__hint {
+    display: block;
+    font-size: 12px;
+    font-weight: 400;
+    color: var(--muted);
+}
+
+.categoryGroup__count {
+    margin-left: auto;
+    padding: 2px 9px;
+    border-radius: 999px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    font-size: 12px;
+    color: var(--muted);
+}
+
+.categoryGroup__items {
+    display: none;
+    padding: 4px 0 8px;
+}
+
+.categoryGroup.is-open .categoryGroup__items {
+    display: block;
+}
+
+.categoryItem {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 9px 14px 9px 34px;
+    cursor: pointer;
+    font-size: 15px;
+    transition: background 0.12s;
+}
+
+.categoryItem:hover {
+    background: var(--blue-soft);
+}
+
+.categoryItem input {
+    margin: 3px 0 0;
+    accent-color: var(--blue);
+    flex: 0 0 auto;
+}
+
+.categoryItem.is-selected {
+    background: var(--blue-soft);
+    color: var(--deep);
+    font-weight: 600;
+}
+
+.categoryEmpty {
+    margin: 12px 2px 0;
+    font-size: 14px;
+    color: var(--muted);
+}
+
+/* ── Отправка ──────────────────────────────────────────── */
+.submitBar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-top: 18px;
+    padding-top: 16px;
+    border-top: 1px solid var(--line);
+}
+
+.submitBar__summary {
+    margin: 0;
+    font-size: 14px;
+    color: var(--muted);
+}
+
+.submitBar__summary.is-chosen {
+    color: var(--green);
+    font-weight: 600;
+}
+
+.btn {
+    padding: 12px 22px;
+    font: inherit;
+    font-weight: 600;
+    color: #fff;
+    background: var(--blue);
+    border: 0;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: background 0.15s, transform 0.06s, box-shadow 0.15s;
+    box-shadow: var(--shadow-sm);
+}
+
+.btn:hover:not(:disabled) {
+    background: #0b4ea8;
+}
+
+.btn:active:not(:disabled) {
+    transform: translateY(1px);
+}
+
+.btn:disabled {
+    background: #9db6d4;
+    cursor: progress;
+}
+
+/* ── Статусы заявок ────────────────────────────────────── */
+.main__catalog {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 12px;
+    margin-top: 16px;
+}
+
+.main__catalogItem {
+    border: 1px solid var(--line);
+    border-radius: var(--radius-sm);
+    padding: 14px;
+    background: #fbfdff;
+}
+
+.main__catalogId {
+    margin: 0 0 4px;
+    font-weight: 650;
+    color: var(--deep);
+}
+
+.main__catalogDate {
+    margin: 0 0 10px;
+    font-size: 12px;
+    color: var(--muted);
+}
+
+.main__catalogItemName {
+    margin: 0 0 6px;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.main__catalogItemComment {
+    margin: 0 0 12px;
+    font-size: 14px;
+    color: #43586c;
+    overflow-wrap: anywhere;
+}
+
+.main__catalogItemProgress {
+    margin: 0;
+}
+
+.main__catalogItemProgressbar {
+    display: inline-block;
+    padding: 4px 11px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.greenDone {
+    background: var(--green-soft);
+    color: var(--green);
+}
+
+.yellowInWork {
+    background: var(--amber-soft);
+    color: var(--amber);
+}
+
+.blueNewQuery {
+    background: var(--blue-soft);
+    color: var(--blue);
+}
+
+/* ── Подтверждение отправки ────────────────────────────── */
+.success {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 40;
+    background: rgba(22, 39, 58, 0.45);
+    place-items: center;
+    padding: 16px;
+}
+
+.success[style*="block"] {
+    display: grid !important;
+}
+
+.success__card {
+    background: var(--surface);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 28px 32px;
+    text-align: center;
+    max-width: 340px;
+}
+
+.success__img {
+    width: 64px;
+    height: 64px;
+    object-fit: contain;
+}
+
+.successLoadingActive {
+    animation: successPop 0.5s ease-out;
+}
+
+@keyframes successPop {
+    0% {
+        transform: scale(0.7);
+        opacity: 0;
+    }
+    100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+.success__title {
+    margin: 14px 0 4px;
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--green);
+}
+
+.success__text {
+    margin: 0;
+    font-size: 14px;
+    color: var(--muted);
+}
+
+/* ── Подвал ────────────────────────────────────────────── */
+.footer {
+    padding: 18px 0;
+    border-top: 1px solid var(--line);
+    background: var(--surface);
+    font-size: 13px;
+    color: var(--muted);
+    text-align: center;
+}
+
+/* ── Узкие экраны ──────────────────────────────────────── */
+@media (max-width: 900px) {
+    .layout {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .categoryList {
+        max-height: 320px;
+    }
+
+    .submitBar {
+        position: sticky;
+        bottom: 0;
+        background: var(--surface);
+        padding-bottom: 12px;
+    }
+
+    .btn {
+        flex: 1;
+    }
+}
+
+@media (max-width: 560px) {
+    .topbar__links {
+        width: 100%;
+    }
+
+    .linkbtn {
+        flex: 1;
+        justify-content: center;
+        font-size: 13px;
+    }
+
+    .panel {
+        padding: 16px;
+    }
+}

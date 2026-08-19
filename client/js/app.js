@@ -1,10 +1,13 @@
 document.addEventListener("DOMContentLoaded", function () {
     const config = window.HELPDESK_CONFIG;
 
+    let form = document.querySelector(".layout");
     let success = document.querySelector(".success");
     let successImg = document.querySelector(".success__img");
-    let checkedOrNot = document.querySelector(".checkedOrNot");
-    let radioInput = document.querySelectorAll(".radioInput");
+    let categoryList = document.querySelector(".categoryList");
+    let categoryEmpty = document.querySelector(".categoryEmpty");
+    let categorySearch = document.querySelector(".categorySearch");
+    let selectionSummary = document.querySelector("#selectionSummary");
     let inputs = document.querySelectorAll(".main__inputs");
     let textArea = document.querySelector("textarea");
     let btn = document.querySelector(".btn__submit");
@@ -19,12 +22,21 @@ document.addEventListener("DOMContentLoaded", function () {
     let searchTimer = null;
     let searchRequestId = 0;
 
-    btn.addEventListener("click", (e) => {
+    renderCategories();
+    restoreRequester();
+
+    let radioInput = categoryList.querySelectorAll(".radioInput");
+
+    form.addEventListener("submit", (e) => {
         e.preventDefault();
+        submit();
+    });
+
+    function submit() {
         if (sending) {
             return;
         }
-        if (!checkInputs(inputs, textArea, checkedOrNot, radioInput)) {
+        if (!checkInputs(inputs, textArea, categoryList, radioInput)) {
             return;
         }
 
@@ -105,23 +117,124 @@ document.addEventListener("DOMContentLoaded", function () {
                 }
 
                 submissionKey = createSubmissionKey();
-                inputs.forEach((item) => (item.value = ""));
+                rememberRequester();
                 textArea.value = "";
-                success.style.display = "block";
-                successImg.classList.add("successLoadingActive");
+                radioInput.forEach((item) => {
+                    item.checked = false;
+                });
+                updateSelectionSummary();
+                showSuccess();
 
-                setTimeout(() => {
-                    success.style.display = "none";
-                    successImg.classList.remove("successLoadingActive");
-                }, 3400);
-
+                // Телефон остаётся в поиске: человек тут же видит свою заявку.
+                if (searchInput && !searchInput.value.trim()) {
+                    searchInput.value = inputs[0].value.trim();
+                }
                 refreshQueryList();
             })
             .finally(() => {
                 setSending(false);
             });
-    });
+    }
 
+    // ── Категории ────────────────────────────────────────────
+    function renderCategories() {
+        const groups = window.HELPDESK_CATEGORIES || [];
+        categoryList.innerHTML = "";
+
+        groups.forEach((group, index) => {
+            const wrap = createElement("div", "categoryGroup");
+            wrap.dataset.group = group.key;
+            if (index === 0) {
+                wrap.classList.add("is-open");
+            }
+
+            const toggle = createElement("button", "categoryGroup__toggle");
+            toggle.type = "button";
+            toggle.appendChild(createElement("span", "categoryGroup__chevron"));
+
+            const title = createElement("span");
+            title.appendChild(document.createTextNode(group.title));
+            title.appendChild(createElement("span", "categoryGroup__hint", group.hint));
+            toggle.appendChild(title);
+            toggle.appendChild(
+                createElement("span", "categoryGroup__count", group.items.length)
+            );
+            toggle.addEventListener("click", () => {
+                wrap.classList.toggle("is-open");
+            });
+            wrap.appendChild(toggle);
+
+            const items = createElement("div", "categoryGroup__items");
+            group.items.forEach((item) => {
+                const label = createElement("label", "categoryItem");
+                label.dataset.text = item.value.toLowerCase();
+
+                const radio = document.createElement("input");
+                radio.type = "radio";
+                radio.name = "report";
+                radio.className = "radioInput";
+                radio.id = item.id;
+                radio.value = item.value;
+                radio.addEventListener("change", () => {
+                    updateSelectionSummary();
+                    categoryList.classList.remove("is-invalid");
+                });
+
+                label.appendChild(radio);
+                label.appendChild(createElement("span", null, item.value));
+                items.appendChild(label);
+            });
+
+            wrap.appendChild(items);
+            categoryList.appendChild(wrap);
+        });
+    }
+
+    function updateSelectionSummary() {
+        let chosen = null;
+        radioInput.forEach((item) => {
+            if (item.checked) {
+                chosen = item.value;
+            }
+        });
+
+        categoryList.querySelectorAll(".categoryItem").forEach((label) => {
+            const radio = label.querySelector(".radioInput");
+            label.classList.toggle("is-selected", Boolean(radio && radio.checked));
+        });
+
+        selectionSummary.textContent = chosen
+            ? `Выбрано: ${chosen}`
+            : "Категория не выбрана";
+        selectionSummary.classList.toggle("is-chosen", Boolean(chosen));
+    }
+
+    if (categorySearch) {
+        categorySearch.addEventListener("input", () => {
+            const needle = categorySearch.value.trim().toLowerCase();
+            let visibleTotal = 0;
+
+            categoryList.querySelectorAll(".categoryGroup").forEach((group) => {
+                let visible = 0;
+                group.querySelectorAll(".categoryItem").forEach((label) => {
+                    const match = !needle || label.dataset.text.indexOf(needle) !== -1;
+                    label.hidden = !match;
+                    if (match) visible += 1;
+                });
+
+                group.hidden = visible === 0;
+                visibleTotal += visible;
+                // При поиске разделы раскрываются сами, иначе совпадение не видно.
+                if (needle) {
+                    group.classList.toggle("is-open", visible > 0);
+                }
+            });
+
+            categoryEmpty.hidden = visibleTotal > 0;
+        });
+    }
+
+    // ── Поиск заявок по телефону ─────────────────────────────
     if (searchInput) {
         searchInput.addEventListener("input", () => {
             window.clearTimeout(searchTimer);
@@ -161,9 +274,49 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     }
 
+    // ── Мелочи формы ─────────────────────────────────────────
+    function showSuccess() {
+        success.style.display = "block";
+        successImg.classList.add("successLoadingActive");
+        setTimeout(() => {
+            success.style.display = "none";
+            successImg.classList.remove("successLoadingActive");
+        }, 3400);
+    }
+
+    // ФИО и отделение у одного человека не меняются от заявки к заявке.
+    function rememberRequester() {
+        try {
+            window.localStorage.setItem(
+                "helpdeskRequester",
+                JSON.stringify({
+                    phone: inputs[0].value,
+                    name: inputs[1].value,
+                    department: inputs[2].value,
+                })
+            );
+        } catch (err) {
+            console.warn("Не удалось сохранить данные заявителя", err);
+        }
+    }
+
+    function restoreRequester() {
+        try {
+            const saved = JSON.parse(
+                window.localStorage.getItem("helpdeskRequester") || "{}"
+            );
+            if (saved.phone) inputs[0].value = saved.phone;
+            if (saved.name) inputs[1].value = saved.name;
+            if (saved.department) inputs[2].value = saved.department;
+        } catch (err) {
+            console.warn("Не удалось прочитать данные заявителя", err);
+        }
+    }
+
     function setSending(value) {
         sending = value;
         btn.disabled = value;
+        btn.textContent = value ? "Отправляем…" : "Отправить заявку";
     }
 
     function findService(categoryId) {
@@ -187,17 +340,11 @@ function buildQueryCard(item, statusClass) {
     const parts = formatCreatedAt(item.createdAt);
     const card = createElement("div", "main__catalogItem");
 
-    card.appendChild(createElement("p", "main__catalogId", ` ${item.userName}`));
-
-    const date = createElement("p", "main__catalogDate");
-    date.appendChild(createElement("span", null, `Дата: ${parts.date}`));
-    date.appendChild(document.createElement("br"));
-    date.appendChild(createElement("span", null, ` время: ${parts.time}`));
-    card.appendChild(date);
-
+    card.appendChild(createElement("p", "main__catalogId", item.userName));
     card.appendChild(
-        createElement("p", "main__catalogItemName", item.userQuery)
+        createElement("p", "main__catalogDate", `${parts.date} · ${parts.time}`)
     );
+    card.appendChild(createElement("p", "main__catalogItemName", item.userQuery));
     card.appendChild(
         createElement("p", "main__catalogItemComment", item.userComment)
     );
@@ -249,40 +396,42 @@ function logRejected(label, result) {
     }
 }
 
-function checkInputs(inputs, textArea, checkedOrNot, inputsRadio) {
+function checkInputs(inputs, textArea, categoryList, inputsRadio) {
     let res = true;
+    let firstInvalid = null;
+
     inputs.forEach((element) => {
-        if (element.value.trim() == "") {
-            console.log("error");
-            element.style.cssText = `
-            border:2px solid red
-            `;
+        const empty = element.value.trim() === "";
+        element.classList.toggle("is-invalid", empty);
+        if (empty) {
             res = false;
-        } else {
-            element.style.cssText = `none`;
+            firstInvalid = firstInvalid || element;
         }
     });
 
-    if (textArea.value.trim() == "") {
-        console.log("error");
-        textArea.style.cssText = `border:2px solid red`;
+    const commentEmpty = textArea.value.trim() === "";
+    textArea.classList.toggle("is-invalid", commentEmpty);
+    if (commentEmpty) {
         res = false;
-    } else {
-        textArea.style.cssText = `none`;
+        firstInvalid = firstInvalid || textArea;
     }
 
-    let radioFalse = false;
+    let chosen = false;
     inputsRadio.forEach((item) => {
         if (item.checked) {
-            radioFalse = true;
+            chosen = true;
         }
     });
-    if (radioFalse) {
-        checkedOrNot.style.cssText = ``;
-    } else {
-        checkedOrNot.style.cssText = `border:4px solid red`;
+    categoryList.classList.toggle("is-invalid", !chosen);
+    if (!chosen) {
         res = false;
+        firstInvalid = firstInvalid || categoryList;
     }
+
+    if (firstInvalid && typeof firstInvalid.scrollIntoView === "function") {
+        firstInvalid.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+
     return res;
 }
 
