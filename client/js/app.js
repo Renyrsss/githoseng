@@ -52,14 +52,25 @@ document.addEventListener("DOMContentLoaded", function () {
         let legacyCategoryId;
         let categoryId = null;
         let service = null;
+        let section = "";
         radioInput.forEach((item) => {
             if (item.checked) {
                 query = item.value;
                 legacyCategoryId = item.id;
                 categoryId = Number(item.dataset.categoryId) || null;
+                section = item.dataset.section || "";
                 service = findService(item.dataset.serviceKey);
             }
         });
+
+        // Видно сразу, куда уйдёт заявка: раздел, бригада и какие каналы
+        // задействованы. Если бригада не определилась — Telegram и старый
+        // Strapi пропускаются, и в консоли это написано прямым текстом.
+        console.info(
+            `Заявка · раздел «${section || "?"}» → бригада ${service ? service.key : "не определена"}` +
+                ` · Strapi: ${service && service.endpoint ? "да" : "нет"}` +
+                ` · Telegram: ${service && service.botToken && service.chatId ? "да" : "нет"}`
+        );
 
         // В заявку уходит номер одними цифрами (77XXXXXXXXX): по нему потом
         // ищется статус, а корп-система нормализует его сама.
@@ -221,6 +232,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 radio.value = item.value;
                 radio.dataset.categoryId = item.categoryId || "";
                 radio.dataset.serviceKey = item.serviceKey || "";
+                radio.dataset.section = item.section || "";
                 radio.addEventListener("change", () => {
                     updateSelectionSummary();
                     categoryList.classList.remove("is-invalid");
@@ -450,6 +462,7 @@ function normalizeCorpCatalog(groups) {
                     value: item.name_ru,
                     categoryId: item.id,
                     serviceKey,
+                    section: root.name_ru,
                 })),
             };
         })
@@ -465,6 +478,7 @@ function normalizeStaticCatalog(groups) {
             value: item.value,
             categoryId: null,
             serviceKey: group.key,
+            section: group.title,
         })),
     }));
 }
