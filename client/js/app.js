@@ -91,10 +91,10 @@ document.addEventListener("DOMContentLoaded", function () {
 
         setSending(true);
 
-        // Старый Strapi и Telegram знают только три исходные службы. Раздел,
-        // заведённый в админке и не отнесённый ни к одной из них, уходит
-        // только в корп-систему.
-        const legacyRequest = service
+        // Старый Strapi знает только три исходные бригады, а Telegram-группа
+        // есть не у всех. Чего нет — то пропускается: заявка в любом случае
+        // уходит в корп-систему, где её видит диспетчер.
+        const legacyRequest = service && service.endpoint
             ? axios.post(`${config.legacyApiUrl}${service.endpoint}`, {
                   data: {
                       userName: legacyPayload.userName,
@@ -105,7 +105,7 @@ document.addEventListener("DOMContentLoaded", function () {
                   },
               })
             : Promise.resolve(null);
-        const telegramRequest = service
+        const telegramRequest = service && service.botToken && service.chatId
             ? axios.post(`${config.telegramApiUrl}/bot${service.botToken}/sendMessage`, {
                   chat_id: service.chatId,
                   parse_mode: "html",

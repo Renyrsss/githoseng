@@ -22,7 +22,9 @@ window.HELPDESK_CONFIG = {
     sectionServiceRules: [
         { match: /сантех|plumb/i, service: "santehniks" },
         { match: /электр|electr/i, service: "elektriks" },
-        { match: /вентил|кондицион|ventil/i, service: "ventel" },
+        { match: /вентил|ventil/i, service: "ventel" },
+        { match: /кондицион/i, service: "conditioners" },
+        { match: /слаботоч/i, service: "lowcurrent" },
     ],
 
     // Службы формы. match сопоставляется с id выбранной радиокнопки.
@@ -47,6 +49,24 @@ window.HELPDESK_CONFIG = {
             endpoint: "/api/ventilyaczionshhiks",
             chatId: -4587546685,
             botToken: "7525962971:AAEoBGefK4e-PjIeNC24X_KY2u7eQU_rI0s",
+        },
+        // Новые бригады. В старом Strapi коллекций под них нет, поэтому
+        // endpoint пуст — заявка идёт только в корп-систему. Как заведёте бота
+        // в BotFather и добавите его в группу, впишите сюда токен и chatId
+        // (у групп он отрицательный), и уведомления заработают.
+        {
+            key: "conditioners",
+            match: "conditioners",
+            endpoint: null,
+            chatId: null,
+            botToken: null,
+        },
+        {
+            key: "lowcurrent",
+            match: "lowcurrent",
+            endpoint: null,
+            chatId: null,
+            botToken: null,
         },
     ],
 
