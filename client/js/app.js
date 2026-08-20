@@ -28,7 +28,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
     attachPhoneMask(inputs[0]);
     attachPhoneMask(searchInput);
-    restoreRequester();
+    forgetRequester();
 
     loadCategories().then((groups) => {
         categoryGroups = groups;
@@ -137,7 +137,10 @@ document.addEventListener("DOMContentLoaded", function () {
                 }
 
                 submissionKey = createSubmissionKey();
-                rememberRequester();
+                inputs.forEach((item) => {
+                    item.value = "";
+                    delete item.dataset.digits;
+                });
                 textArea.value = "";
                 radioInput.forEach((item) => {
                     item.checked = false;
@@ -401,32 +404,13 @@ document.addEventListener("DOMContentLoaded", function () {
         }, 3400);
     }
 
-    // ФИО и отделение у одного человека не меняются от заявки к заявке.
-    function rememberRequester() {
+    // Форма общая: телефон и ФИО предыдущего человека не должны в ней
+    // оставаться. Ключ от старой версии заодно вычищается.
+    function forgetRequester() {
         try {
-            window.localStorage.setItem(
-                "helpdeskRequester",
-                JSON.stringify({
-                    phone: readPhone(inputs[0]),
-                    name: inputs[1].value,
-                    department: inputs[2].value,
-                })
-            );
+            window.localStorage.removeItem("helpdeskRequester");
         } catch (err) {
-            console.warn("Не удалось сохранить данные заявителя", err);
-        }
-    }
-
-    function restoreRequester() {
-        try {
-            const saved = JSON.parse(
-                window.localStorage.getItem("helpdeskRequester") || "{}"
-            );
-            if (saved.phone) writePhone(inputs[0], toNationalDigits(saved.phone));
-            if (saved.name) inputs[1].value = saved.name;
-            if (saved.department) inputs[2].value = saved.department;
-        } catch (err) {
-            console.warn("Не удалось прочитать данные заявителя", err);
+            console.warn("Не удалось очистить данные заявителя", err);
         }
     }
 
