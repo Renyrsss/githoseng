@@ -58,16 +58,16 @@ window.HELPDESK_CONFIG = {
             key: "conditioners",
             match: "conditioners",
             endpoint: null,
-            // @nnmccondtioner_bot — заявки по кондиционерам
-            chatId: null,
+            // @nnmccondtioner_bot → группа «КОНДИЦИОНЕР - заявки»
+            chatId: -5411418358,
             botToken: "8767801638:AAGl8qRFdQfSEREF5BUFB-9AaHb8Xoc5L8M",
         },
         {
             key: "lowcurrent",
             match: "lowcurrent",
             endpoint: null,
-            // @slabotoknnmc_bot — заявки слаботочникам
-            chatId: null,
+            // @slabotoknnmc_bot → группа «СЛАБОТОЧНИКИ заявки»
+            chatId: -5487850945,
             botToken: "8775937113:AAFWZWYoJp9msSdPonlnRHQtJMM9GIeVKxc",
         },
     ],
