@@ -11,8 +11,19 @@
 // заявки.
 window.HELPDESK_CONFIG = {
     legacyApiUrl: "http://192.168.101.25:1337",
+    corpApiUrl: "http://192.168.101.25:12010",
     corpHelpdeskUrl: "http://192.168.101.25:12010/api/tickets/legacy/submit",
+    corpCategoriesUrl: "http://192.168.101.25:12010/api/tickets/legacy/categories",
     telegramApiUrl: "https://api.telegram.org",
+
+    // Раздел каталога → служба, которой уходит заявка. Разделы, заведённые в
+    // админке, распознаются по названию; если совпадения нет, заявка идёт
+    // только в корп-систему, а старый Strapi и Telegram пропускаются.
+    sectionServiceRules: [
+        { match: /сантех|plumb/i, service: "santehniks" },
+        { match: /электр|electr/i, service: "elektriks" },
+        { match: /вентил|кондицион|ventil/i, service: "ventel" },
+    ],
 
     // Службы формы. match сопоставляется с id выбранной радиокнопки.
     services: [

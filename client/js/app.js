@@ -23,12 +23,17 @@ document.addEventListener("DOMContentLoaded", function () {
     let searchTimer = null;
     let searchRequestId = 0;
 
+    let categoryGroups = [];
+    let radioInput = [];
+
     attachPhoneMask(inputs[0]);
     attachPhoneMask(searchInput);
-    renderCategories();
     restoreRequester();
 
-    let radioInput = categoryList.querySelectorAll(".radioInput");
+    loadCategories().then((groups) => {
+        categoryGroups = groups;
+        renderCategories();
+    });
 
     form.addEventListener("submit", (e) => {
         e.preventDefault();
@@ -45,19 +50,16 @@ document.addEventListener("DOMContentLoaded", function () {
 
         let query;
         let legacyCategoryId;
+        let categoryId = null;
         let service = null;
         radioInput.forEach((item) => {
             if (item.checked) {
                 query = item.value;
                 legacyCategoryId = item.id;
-                service = findService(item.id);
+                categoryId = Number(item.dataset.categoryId) || null;
+                service = findService(item.dataset.serviceKey);
             }
         });
-
-        if (!service) {
-            alert("Не удалось определить службу для выбранной категории!");
-            return;
-        }
 
         // В заявку уходит номер одними цифрами (77XXXXXXXXX): по нему потом
         // ищется статус, а корп-система нормализует его сама.
@@ -77,8 +79,11 @@ document.addEventListener("DOMContentLoaded", function () {
             userSide: inputs[2].value,
             userComment: textArea.value,
             userQuery: query,
+            // Категория из корп-системы приходит с настоящим id — по нему
+            // заявка ложится точно, без сопоставления по тексту.
+            categoryId,
             legacyCategoryId,
-            legacyEndpoint: service.endpoint,
+            legacyEndpoint: service ? service.endpoint : null,
             serviceGroupSlug: config.serviceGroupSlug,
             departmentKey: config.departmentKey,
             submissionKey,
@@ -86,27 +91,34 @@ document.addEventListener("DOMContentLoaded", function () {
 
         setSending(true);
 
+        // Старый Strapi и Telegram знают только три исходные службы. Раздел,
+        // заведённый в админке и не отнесённый ни к одной из них, уходит
+        // только в корп-систему.
+        const legacyRequest = service
+            ? axios.post(`${config.legacyApiUrl}${service.endpoint}`, {
+                  data: {
+                      userName: legacyPayload.userName,
+                      userPhone: legacyPayload.userPhone,
+                      userSide: legacyPayload.userSide,
+                      userComment: legacyPayload.userComment,
+                      userQuery: legacyPayload.userQuery,
+                  },
+              })
+            : Promise.resolve(null);
+        const telegramRequest = service
+            ? axios.post(`${config.telegramApiUrl}/bot${service.botToken}/sendMessage`, {
+                  chat_id: service.chatId,
+                  parse_mode: "html",
+                  text: massage,
+              })
+            : Promise.resolve(null);
+
         // allSettled, а не all: недоступность корп-системы или Telegram больше
         // не показывает ошибку по заявке, которая на самом деле создана.
         Promise.allSettled([
-            axios.post(`${config.legacyApiUrl}${service.endpoint}`, {
-                data: {
-                    userName: legacyPayload.userName,
-                    userPhone: legacyPayload.userPhone,
-                    userSide: legacyPayload.userSide,
-                    userComment: legacyPayload.userComment,
-                    userQuery: legacyPayload.userQuery,
-                },
-            }),
+            legacyRequest,
             axios.post(config.corpHelpdeskUrl, legacyPayload),
-            axios.post(
-                `${config.telegramApiUrl}/bot${service.botToken}/sendMessage`,
-                {
-                    chat_id: service.chatId,
-                    parse_mode: "html",
-                    text: massage,
-                }
-            ),
+            telegramRequest,
         ])
             .then((results) => {
                 const [legacyResult, corpResult, telegramResult] = results;
@@ -144,16 +156,32 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     // ── Категории ────────────────────────────────────────────
+    /**
+     * Каталог берётся из корп-системы: что завели в админке, то и появляется в
+     * форме. Если корп-система недоступна, работает встроенный список из
+     * categories.js — форма не должна умирать вместе с ней.
+     */
+    function loadCategories() {
+        return axios
+            .get(config.corpCategoriesUrl)
+            .then((res) => {
+                const groups = normalizeCorpCatalog((res.data && res.data.data) || []);
+                if (!groups || groups.length === 0) {
+                    throw new Error("Каталог корп-системы пуст");
+                }
+                return groups;
+            })
+            .catch((err) => {
+                console.warn("Каталог из корп-системы недоступен, беру встроенный", err);
+                return normalizeStaticCatalog(window.HELPDESK_CATEGORIES);
+            });
+    }
+
     function renderCategories() {
-        const groups = window.HELPDESK_CATEGORIES || [];
         categoryList.innerHTML = "";
 
-        groups.forEach((group, index) => {
+        categoryGroups.forEach((group) => {
             const wrap = createElement("div", "categoryGroup");
-            wrap.dataset.group = group.key;
-            if (index === 0) {
-                wrap.classList.add("is-open");
-            }
 
             const toggle = createElement("button", "categoryGroup__toggle");
             toggle.type = "button";
@@ -161,7 +189,9 @@ document.addEventListener("DOMContentLoaded", function () {
 
             const title = createElement("span");
             title.appendChild(document.createTextNode(group.title));
-            title.appendChild(createElement("span", "categoryGroup__hint", group.hint));
+            if (group.hint) {
+                title.appendChild(createElement("span", "categoryGroup__hint", group.hint));
+            }
             toggle.appendChild(title);
             toggle.appendChild(
                 createElement("span", "categoryGroup__count", group.items.length)
@@ -171,7 +201,11 @@ document.addEventListener("DOMContentLoaded", function () {
             });
             wrap.appendChild(toggle);
 
+            // Внутренний контейнер нужен для плавного раскрытия: анимируется
+            // внешняя сетка, а содержимое просто обрезается по высоте.
             const items = createElement("div", "categoryGroup__items");
+            const inner = createElement("div", "categoryGroup__itemsInner");
+
             group.items.forEach((item) => {
                 const label = createElement("label", "categoryItem");
                 label.dataset.text = item.value.toLowerCase();
@@ -180,8 +214,10 @@ document.addEventListener("DOMContentLoaded", function () {
                 radio.type = "radio";
                 radio.name = "report";
                 radio.className = "radioInput";
-                radio.id = item.id;
+                radio.id = item.key;
                 radio.value = item.value;
+                radio.dataset.categoryId = item.categoryId || "";
+                radio.dataset.serviceKey = item.serviceKey || "";
                 radio.addEventListener("change", () => {
                     updateSelectionSummary();
                     categoryList.classList.remove("is-invalid");
@@ -189,12 +225,16 @@ document.addEventListener("DOMContentLoaded", function () {
 
                 label.appendChild(radio);
                 label.appendChild(createElement("span", null, item.value));
-                items.appendChild(label);
+                inner.appendChild(label);
             });
 
+            items.appendChild(inner);
             wrap.appendChild(items);
             categoryList.appendChild(wrap);
         });
+
+        radioInput = categoryList.querySelectorAll(".radioInput");
+        updateSelectionSummary();
     }
 
     function updateSelectionSummary() {
@@ -396,14 +436,63 @@ document.addEventListener("DOMContentLoaded", function () {
         btn.textContent = value ? "Отправляем…" : "Отправить заявку";
     }
 
-    function findService(categoryId) {
-        return (
-            config.services.find((item) =>
-                String(categoryId).includes(item.match)
-            ) || null
-        );
+    function findService(serviceKey) {
+        if (!serviceKey) return null;
+        return config.services.find((item) => item.key === serviceKey) || null;
     }
 });
+
+// ── Каталог ──────────────────────────────────────────────────
+// Корп-система отдаёт плоский список с parentId; форме нужны разделы с
+// вложенными работами. Раздел без вложений сам становится выбором.
+function normalizeCorpCatalog(groups) {
+    const config = window.HELPDESK_CONFIG;
+    const group = (groups || []).find((item) => item.slug === config.serviceGroupSlug);
+    if (!group || !Array.isArray(group.categories)) return null;
+
+    const roots = group.categories.filter((item) => !item.parentId);
+
+    return roots
+        .map((root) => {
+            const children = group.categories.filter((item) => item.parentId === root.id);
+            const serviceKey = resolveServiceKey(root);
+            const source = children.length > 0 ? children : [root];
+
+            return {
+                title: root.name_ru,
+                hint: "",
+                items: source.map((item) => ({
+                    key: `category-${item.id}`,
+                    value: item.name_ru,
+                    categoryId: item.id,
+                    serviceKey,
+                })),
+            };
+        })
+        .filter((section) => section.items.length > 0);
+}
+
+function normalizeStaticCatalog(groups) {
+    return (groups || []).map((group) => ({
+        title: group.title,
+        hint: group.hint,
+        items: group.items.map((item) => ({
+            key: item.id,
+            value: item.value,
+            categoryId: null,
+            serviceKey: group.key,
+        })),
+    }));
+}
+
+// Раздел относится к службе по названию: так работают и исходные три раздела,
+// и новые, заведённые в админке.
+function resolveServiceKey(section) {
+    const config = window.HELPDESK_CONFIG;
+    const text = `${section.name_ru || ""} ${section.slug || ""}`;
+    const rule = (config.sectionServiceRules || []).find((item) => item.match.test(text));
+    return rule ? rule.service : null;
+}
 
 const STATUS_CLASS = {
     Сделано: "greenDone",

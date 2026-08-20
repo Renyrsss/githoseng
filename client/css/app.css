@@ -312,13 +312,28 @@ body {
     color: var(--muted);
 }
 
+/* Раскрытие анимируется через строку сетки: высота содержимого заранее
+   неизвестна, а 0fr → 1fr даёт плавность без её измерения в JS. */
 .categoryGroup__items {
-    display: none;
-    padding: 4px 0 8px;
+    display: grid;
+    grid-template-rows: 0fr;
+    transition: grid-template-rows 0.28s ease;
 }
 
 .categoryGroup.is-open .categoryGroup__items {
-    display: block;
+    grid-template-rows: 1fr;
+}
+
+.categoryGroup__itemsInner {
+    min-height: 0;
+    overflow: hidden;
+    padding: 4px 0 8px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .categoryGroup__items {
+        transition: none;
+    }
 }
 
 .categoryItem {
