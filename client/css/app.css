@@ -403,11 +403,15 @@ body {
 }
 
 /* ── Статусы заявок ────────────────────────────────────── */
+.statusHint {
+    margin: 10px 2px 0;
+    font-size: 13px;
+    color: var(--muted);
+}
+
 .main__catalog {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-    gap: 12px;
-    margin-top: 16px;
+    margin-top: 14px;
+    max-width: 520px;
 }
 
 .main__catalogItem {
@@ -467,6 +471,12 @@ body {
 .blueNewQuery {
     background: var(--blue-soft);
     color: var(--blue);
+}
+
+/* Статус, которого нет в списке известных, — например пустой в старой записи. */
+.greyUnknown {
+    background: #eef2f6;
+    color: var(--muted);
 }
 
 /* ── Подтверждение отправки ────────────────────────────── */

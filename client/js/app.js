@@ -12,6 +12,7 @@ document.addEventListener("DOMContentLoaded", function () {
     let textArea = document.querySelector("textarea");
     let btn = document.querySelector(".btn__submit");
     let searchInput = document.querySelector(".main__searchInput");
+    let statusHint = document.querySelector(".statusHint");
     let catalog = document.querySelector(".main__catalog");
 
     // Один ключ на одну заполненную форму: если отправка сорвалась и человек
@@ -22,6 +23,8 @@ document.addEventListener("DOMContentLoaded", function () {
     let searchTimer = null;
     let searchRequestId = 0;
 
+    attachPhoneMask(inputs[0]);
+    attachPhoneMask(searchInput);
     renderCategories();
     restoreRequester();
 
@@ -56,16 +59,21 @@ document.addEventListener("DOMContentLoaded", function () {
             return;
         }
 
+        // В заявку уходит номер одними цифрами (77XXXXXXXXX): по нему потом
+        // ищется статус, а корп-система нормализует его сама.
+        const phoneDigits = readPhone(inputs[0]);
+        const phoneApi = config.phoneCountryCode + phoneDigits;
+
         let massage = `<b>Заявка  ${query}</b>\n`;
         massage += `<b>ФИО : ${inputs[1].value}</b>\n`;
         massage += `<b>Отделение : ${inputs[2].value}</b>\n`;
-        massage += `<b>Телеофн : ${inputs[0].value}</b>\n`;
+        massage += `<b>Телеофн : ${formatPhone(phoneDigits)}</b>\n`;
         massage += `<b>Комментарий : ${textArea.value}</b>\n`;
         massage += `<b>Запрос : ${query}</b>\n`;
 
         const legacyPayload = {
             userName: inputs[1].value,
-            userPhone: inputs[0].value,
+            userPhone: phoneApi,
             userSide: inputs[2].value,
             userComment: textArea.value,
             userQuery: query,
@@ -125,10 +133,9 @@ document.addEventListener("DOMContentLoaded", function () {
                 updateSelectionSummary();
                 showSuccess();
 
-                // Телефон остаётся в поиске: человек тут же видит свою заявку.
-                if (searchInput && !searchInput.value.trim()) {
-                    searchInput.value = inputs[0].value.trim();
-                }
+                // Тот же номер сразу подставляем в поиск — человек видит
+                // свою только что отправленную заявку.
+                writePhone(searchInput, phoneDigits);
                 refreshQueryList();
             })
             .finally(() => {
@@ -234,7 +241,7 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     }
 
-    // ── Поиск заявок по телефону ─────────────────────────────
+    // ── Статус последней заявки ──────────────────────────────
     if (searchInput) {
         searchInput.addEventListener("input", () => {
             window.clearTimeout(searchTimer);
@@ -247,31 +254,101 @@ document.addEventListener("DOMContentLoaded", function () {
             return;
         }
 
-        const phone = searchInput.value.trim();
-        if (phone.length < config.searchMinDigits) {
-            renderQueryList([]);
+        const digits = readPhone(searchInput);
+        catalog.innerHTML = "";
+
+        // Номер ищется целиком: по куску телефона чужие заявки больше не видны.
+        if (digits.length < config.phoneNationalLength) {
+            setStatusHint(
+                digits.length === 0
+                    ? "Покажем последнюю заявку, отправленную с этого номера"
+                    : "Введите номер полностью — 10 цифр после +7"
+            );
             return;
         }
 
-        // Ответы приходят не по порядку: показываем только последний запрос.
+        setStatusHint("Ищем заявку…");
         searchRequestId += 1;
         const requestId = searchRequestId;
 
-        searchQueriesByPhone(phone).then((items) => {
-            if (requestId === searchRequestId) {
-                renderQueryList(items);
+        findLatestQuery(digits).then((item) => {
+            if (requestId !== searchRequestId) {
+                return;
             }
+            if (!item) {
+                setStatusHint("Заявок с этого номера не найдено");
+                return;
+            }
+            setStatusHint("Последняя заявка с этого номера");
+            catalog.appendChild(buildQueryCard(item));
         });
     }
 
-    function renderQueryList(items) {
-        catalog.innerHTML = "";
-        items.forEach((item) => {
-            const statusClass = STATUS_CLASS[item.Progress];
-            if (statusClass) {
-                catalog.appendChild(buildQueryCard(item, statusClass));
+    function setStatusHint(text) {
+        if (statusHint) {
+            statusHint.textContent = text;
+        }
+    }
+
+    // ── Телефон ──────────────────────────────────────────────
+    // Код страны зафиксирован, вводятся только 10 национальных цифр,
+    // поэтому «бесконечный» ввод и чужие форматы больше невозможны.
+    function attachPhoneMask(input) {
+        if (!input) {
+            return;
+        }
+
+        let previous = "";
+
+        const apply = (event) => {
+            let digits = toNationalDigits(input.value);
+            let formatted = formatPhone(digits);
+
+            // Backspace по скобке или пробелу не должен возвращать их обратно:
+            // если разметка не изменилась, убираем ещё одну цифру.
+            const deleting =
+                event && typeof event.inputType === "string" &&
+                event.inputType.indexOf("delete") === 0;
+            if (deleting && formatted === previous) {
+                digits = digits.slice(0, -1);
+                formatted = formatPhone(digits);
+            }
+
+            input.value = formatted;
+            input.dataset.digits = digits;
+            previous = formatted;
+            if (digits.length === config.phoneNationalLength) {
+                input.classList.remove("is-invalid");
+            }
+        };
+
+        input.addEventListener("input", apply);
+        input.addEventListener("focus", () => {
+            if (!input.value) {
+                input.value = `+${config.phoneCountryCode} (`;
+                previous = input.value;
             }
         });
+        input.addEventListener("blur", () => {
+            if (!input.dataset.digits) {
+                input.value = "";
+                previous = "";
+            }
+        });
+
+        apply();
+    }
+
+    function readPhone(input) {
+        return (input && input.dataset.digits) || "";
+    }
+
+    function writePhone(input, digits) {
+        if (!input) {
+            return;
+        }
+        input.value = formatPhone(digits);
+        input.dataset.digits = digits;
     }
 
     // ── Мелочи формы ─────────────────────────────────────────
@@ -290,7 +367,7 @@ document.addEventListener("DOMContentLoaded", function () {
             window.localStorage.setItem(
                 "helpdeskRequester",
                 JSON.stringify({
-                    phone: inputs[0].value,
+                    phone: readPhone(inputs[0]),
                     name: inputs[1].value,
                     department: inputs[2].value,
                 })
@@ -305,7 +382,7 @@ document.addEventListener("DOMContentLoaded", function () {
             const saved = JSON.parse(
                 window.localStorage.getItem("helpdeskRequester") || "{}"
             );
-            if (saved.phone) inputs[0].value = saved.phone;
+            if (saved.phone) writePhone(inputs[0], toNationalDigits(saved.phone));
             if (saved.name) inputs[1].value = saved.name;
             if (saved.department) inputs[2].value = saved.department;
         } catch (err) {
@@ -334,10 +411,46 @@ const STATUS_CLASS = {
     "Новая заявка": "blueNewQuery",
 };
 
+// Казахстанский номер: код страны отбрасывается, остаются 10 национальных
+// цифр. К одному виду приводятся и то, что печатает сама маска (+7 (777…),
+// и вставленные 8 777…, +7 777…, 777….
+function toNationalDigits(value) {
+    const config = window.HELPDESK_CONFIG;
+    const code = config.phoneCountryCode;
+    const length = config.phoneNationalLength;
+    const raw = String(value || "");
+    let digits = raw.replace(/\D/g, "");
+
+    if (raw.indexOf(`+${code}`) === 0 && digits.indexOf(code) === 0) {
+        // Плюс с кодом — либо наша же разметка, либо вставленный полный номер.
+        digits = digits.slice(code.length);
+    } else if (digits.length === length + 1 && (digits[0] === "7" || digits[0] === "8")) {
+        digits = digits.slice(1);
+    }
+
+    // Лишние цифры отбрасываются с конца, иначе номер «уезжал» бы влево.
+    return digits.slice(0, length);
+}
+
+function formatPhone(digits) {
+    const config = window.HELPDESK_CONFIG;
+    if (!digits) {
+        return "";
+    }
+
+    let out = `+${config.phoneCountryCode} (${digits.slice(0, 3)}`;
+    if (digits.length >= 3) out += ")";
+    if (digits.length > 3) out += ` ${digits.slice(3, 6)}`;
+    if (digits.length > 6) out += ` ${digits.slice(6, 8)}`;
+    if (digits.length > 8) out += ` ${digits.slice(8, 10)}`;
+    return out;
+}
+
 // Карточка собирается через DOM, а не через innerHTML: ФИО и комментарий
 // приходят от анонимных отправителей и раньше выполнялись как разметка.
-function buildQueryCard(item, statusClass) {
+function buildQueryCard(item) {
     const parts = formatCreatedAt(item.createdAt);
+    const statusClass = STATUS_CLASS[item.Progress] || "greyUnknown";
     const card = createElement("div", "main__catalogItem");
 
     card.appendChild(createElement("p", "main__catalogId", item.userName));
@@ -354,7 +467,7 @@ function buildQueryCard(item, statusClass) {
         createElement(
             "span",
             `main__catalogItemProgressbar ${statusClass}`,
-            item.Progress
+            item.Progress || "Статус уточняется"
         )
     );
     card.appendChild(progress);
@@ -397,13 +510,18 @@ function logRejected(label, result) {
 }
 
 function checkInputs(inputs, textArea, categoryList, inputsRadio) {
+    const config = window.HELPDESK_CONFIG;
     let res = true;
     let firstInvalid = null;
 
     inputs.forEach((element) => {
-        const empty = element.value.trim() === "";
-        element.classList.toggle("is-invalid", empty);
-        if (empty) {
+        const isPhone = element.classList.contains("phoneField");
+        const invalid = isPhone
+            ? (element.dataset.digits || "").length !== config.phoneNationalLength
+            : element.value.trim() === "";
+
+        element.classList.toggle("is-invalid", invalid);
+        if (invalid) {
             res = false;
             firstInvalid = firstInvalid || element;
         }
@@ -435,13 +553,18 @@ function checkInputs(inputs, textArea, categoryList, inputsRadio) {
     return res;
 }
 
-// Фильтрация по телефону выполняется на сервере: страница больше не
-// выгружает в браузер все заявки всех сотрудников.
-function searchQueriesByPhone(phone) {
+/**
+ * Последняя заявка по номеру. Совпадение по хвосту номера, потому что в старых
+ * записях код страны записан по-разному, а хвост из 9 цифр у казахстанского номера
+ * уникален. Из каждой службы берётся одна свежая запись, показывается одна
+ * самая новая.
+ */
+function findLatestQuery(digits) {
     const config = window.HELPDESK_CONFIG;
+    const tail = digits.slice(-config.statusMatchDigits);
     const query =
-        `?filters[userPhone][$startsWith]=${encodeURIComponent(phone)}` +
-        `&pagination[pageSize]=${config.searchPageSize}` +
+        `?filters[userPhone][$endsWith]=${encodeURIComponent(tail)}` +
+        `&pagination[pageSize]=1` +
         `&sort=createdAt:desc`;
 
     return Promise.all(
@@ -454,13 +577,13 @@ function searchQueriesByPhone(phone) {
                     )
                 )
                 .catch((err) => {
-                    console.warn(`Не удалось загрузить статусы: ${endpoint}`, err);
+                    console.warn(`Не удалось загрузить статус: ${endpoint}`, err);
                     return [];
                 })
         )
-    ).then((groups) =>
-        groups
-            .reduce((all, group) => all.concat(group), [])
-            .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
-    );
+    ).then((groups) => {
+        const all = groups.reduce((acc, group) => acc.concat(group), []);
+        all.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+        return all[0] || null;
+    });
 }

@@ -84,13 +84,14 @@
                     </div>
 
                     <label class="fieldRow">
-                        <span class="fieldRow__label">Телефон</span>
+                        <span class="fieldRow__label">Телефон · Казахстан</span>
                         <input
                             type="tel"
                             inputmode="numeric"
-                            class="field main__inputs"
+                            class="field main__inputs phoneField"
                             name="phone"
-                            placeholder="777 777 77 77"
+                            maxlength="18"
+                            placeholder="+7 (777) 123 45 67"
                         />
                     </label>
 
@@ -155,10 +156,15 @@
                 <input
                     type="tel"
                     inputmode="numeric"
-                    class="field main__searchInput"
-                    placeholder="Номер телефона, минимум 5 цифр"
+                    class="field main__searchInput phoneField"
+                    maxlength="18"
+                    placeholder="+7 (777) 123 45 67"
                     aria-label="Номер телефона для поиска заявок"
                 />
+
+                <p class="statusHint">
+                    Покажем последнюю заявку, отправленную с этого номера
+                </p>
 
                 <div class="main__catalog"></div>
             </section>

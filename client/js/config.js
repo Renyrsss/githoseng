@@ -49,10 +49,15 @@ window.HELPDESK_CONFIG = {
         "/api/elektriks",
     ],
 
-    // Параметры поиска заявок по телефону.
-    searchMinDigits: 5,
+    // Телефон: страна фиксирована, человек вводит только национальные
+    // 10 цифр — 7XX XXX XX XX.
+    phoneCountryCode: "7",
+    phoneNationalLength: 10,
+
+    // Поиск заявки. Совпадение ищется по последним цифрам номера, потому что
+    // в старых записях код страны записан по-разному: 777…, 7777…, 8777…
+    statusMatchDigits: 9,
     searchDebounceMs: 350,
-    searchPageSize: 50,
 
     // Общая для всех служб часть заявки в корп-системе.
     serviceGroupSlug: "engineering",
