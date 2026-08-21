@@ -38,14 +38,59 @@ body {
     min-height: 100vh;
     display: flex;
     flex-direction: column;
+    overflow-x: hidden;
     font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
     font-size: 16px;
     line-height: 1.5;
     color: var(--ink);
+    background: var(--canvas);
+}
+
+/* Фон живёт своей жизнью: три пятна в цветах логотипа — синяя капля, зелёный
+   лист и голубой отблеск — медленно дышат. Слой закреплён и лежит под
+   контентом, поэтому прокрутке и вёрстке не мешает. */
+body::before {
+    content: "";
+    position: fixed;
+    inset: -25vmax;
+    z-index: -1;
     background:
-        radial-gradient(900px 380px at 12% -8%, #e4f0f9 0%, transparent 60%),
-        radial-gradient(760px 320px at 92% 0%, #e9f4e4 0%, transparent 55%),
-        var(--canvas);
+        radial-gradient(36vmax 36vmax at 20% 14%, rgba(99, 176, 214, 0.5), transparent 62%),
+        radial-gradient(30vmax 30vmax at 84% 6%, rgba(74, 140, 34, 0.32), transparent 64%),
+        radial-gradient(34vmax 34vmax at 72% 86%, rgba(10, 88, 194, 0.26), transparent 62%),
+        radial-gradient(26vmax 26vmax at 8% 82%, rgba(99, 176, 214, 0.28), transparent 66%);
+    animation: drift 28s ease-in-out infinite alternate;
+}
+
+@keyframes drift {
+    from {
+        transform: translate3d(0, 0, 0) scale(1);
+    }
+    to {
+        transform: translate3d(-4vmax, 3vmax, 0) scale(1.07);
+    }
+}
+
+/* Узор поверх пятен: капля, ключ, молния, вентилятор, снежинка, розетка,
+   пульс и крест — работа бригад в медицинской клинике. Держится бледным,
+   к низу страницы растворяется, чтобы не спорить с формой. */
+body::after {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    background-image: url("../img/pattern.svg");
+    background-size: 320px 320px;
+    opacity: 0.5;
+    mask-image: radial-gradient(120vmax 90vmax at 50% 0%, #000 35%, transparent 75%);
+    -webkit-mask-image: radial-gradient(120vmax 90vmax at 50% 0%, #000 35%, transparent 75%);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    body::before {
+        animation: none;
+    }
 }
 
 .container {
@@ -55,8 +100,10 @@ body {
 
 /* ── Шапка ─────────────────────────────────────────────── */
 .topbar {
-    background: var(--surface);
-    border-bottom: 1px solid var(--line);
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-bottom: 1px solid rgba(221, 230, 239, 0.8);
     position: sticky;
     top: 0;
     z-index: 20;
@@ -142,8 +189,10 @@ body {
 }
 
 .panel {
-    background: var(--surface);
-    border: 1px solid var(--line);
+    background: rgba(255, 255, 255, 0.88);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.7);
     border-radius: var(--radius);
     box-shadow: var(--shadow);
     padding: 20px;
@@ -569,18 +618,54 @@ body {
     }
 
     .categoryList {
-        max-height: 320px;
+        max-height: 340px;
+    }
+
+    /* Полупрозрачность с размытием на слабых телефонах стоит дорого и
+       заметно тормозит прокрутку — там оставляем плотный фон. */
+    .panel,
+    .topbar {
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: none;
+        -webkit-backdrop-filter: none;
+    }
+
+    /* Палец крупнее курсора: строки категорий и поля выше. */
+    .categoryItem {
+        padding: 13px 14px 13px 34px;
+    }
+
+    .categoryGroup__toggle {
+        padding: 14px;
+    }
+
+    .field {
+        padding: 13px 14px;
+        font-size: 16px; /* меньше 16px — iOS зумит страницу при фокусе */
     }
 
     .submitBar {
         position: sticky;
         bottom: 0;
-        background: var(--surface);
-        padding-bottom: 12px;
+        margin: 18px -16px -16px;
+        padding: 14px 16px calc(14px + env(safe-area-inset-bottom));
+        background: #fff;
+        border-top: 1px solid var(--line);
+        box-shadow: 0 -10px 24px rgba(28, 63, 99, 0.08);
+    }
+
+    .submitBar__summary {
+        flex: 1 1 100%;
+        order: -1;
     }
 
     .btn {
         flex: 1;
+        padding: 14px 22px;
+    }
+
+    .main__catalog {
+        max-width: none;
     }
 }
 
@@ -592,10 +677,26 @@ body {
     .linkbtn {
         flex: 1;
         justify-content: center;
+        padding: 10px 12px;
         font-size: 13px;
     }
 
     .panel {
         padding: 16px;
+    }
+
+    .brand__logo {
+        width: 40px;
+        height: 40px;
+    }
+
+    .page__lead {
+        font-size: 15px;
+    }
+
+    /* На маленьком экране узор мельче и бледнее, иначе рябит. */
+    body::after {
+        background-size: 220px 220px;
+        opacity: 0.35;
     }
 }
