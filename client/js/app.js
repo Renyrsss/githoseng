@@ -1,6 +1,22 @@
 document.addEventListener("DOMContentLoaded", function () {
     const config = window.HELPDESK_CONFIG;
 
+    // Браузер мог оставить у себя старую страницу и подтянуть к ней новый
+    // скрипт — тогда разметки, которую он ждёт, просто нет. Просить человека
+    // нажать Ctrl+Shift+R бесполезно, поэтому перезагружаемся сами по адресу
+    // с меткой времени: такого URL в кэше нет, значит придёт свежий HTML.
+    if (!document.querySelector(".categoryList") || !document.querySelector(".layout")) {
+        const url = new URL(window.location.href);
+        if (!url.searchParams.has("fresh")) {
+            url.searchParams.set("fresh", String(Date.now()));
+            console.warn("Страница из кэша устарела — обновляю сама");
+            window.location.replace(url.toString());
+            return;
+        }
+        console.error("Разметка страницы не совпадает со скриптом даже после обновления");
+        return;
+    }
+
     let form = document.querySelector(".layout");
     let success = document.querySelector(".success");
     let successImg = document.querySelector(".success__img");
