@@ -26,6 +26,7 @@ document.addEventListener("DOMContentLoaded", function () {
     let categoryGroups = [];
     let radioInput = [];
 
+    checkAppVersion();
     attachPhoneMask(inputs[0]);
     attachPhoneMask(searchInput);
     forgetRequester();
@@ -437,6 +438,37 @@ document.addEventListener("DOMContentLoaded", function () {
         return config.services.find((item) => item.key === serviceKey) || null;
     }
 });
+
+// Кэш браузера умеет держать старую страницу неделями. Сверяем версию с
+// сервером и перезагружаемся один раз, если она разошлась: повторно за ту же
+// версию не перезагружаемся, иначе получился бы бесконечный цикл.
+function checkAppVersion() {
+    const config = window.HELPDESK_CONFIG;
+    if (!config.appVersion || typeof window.fetch !== "function") {
+        return;
+    }
+
+    window
+        .fetch(`version.json?ts=${Date.now()}`, { cache: "no-store" })
+        .then((res) => (res.ok ? res.json() : null))
+        .then((data) => {
+            const fresh = data && data.version;
+            if (!fresh || fresh === config.appVersion) {
+                return;
+            }
+            const key = "helpdeskReloadedFor";
+            if (window.sessionStorage.getItem(key) === fresh) {
+                console.warn(
+                    `Страница осталась версии ${config.appVersion}, на сервере ${fresh}. ` +
+                        "Обновите страницу с Ctrl+Shift+R."
+                );
+                return;
+            }
+            window.sessionStorage.setItem(key, fresh);
+            window.location.reload();
+        })
+        .catch(() => {});
+}
 
 // ── Каталог ──────────────────────────────────────────────────
 // Корп-система отдаёт плоский список с parentId; форме нужны разделы с
