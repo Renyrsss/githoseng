@@ -538,6 +538,18 @@ body::after {
 }
 
 /* Статус, которого нет в списке известных, — например пустой в старой записи. */
+.redInvalid {
+    background: var(--red-soft);
+    color: var(--red);
+}
+
+.main__catalogNumber {
+    margin-left: 8px;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--muted);
+}
+
 .greyUnknown {
     background: #eef2f6;
     color: var(--muted);

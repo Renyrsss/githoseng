@@ -544,6 +544,7 @@ const STATUS_CLASS = {
     Сделано: "greenDone",
     "в работе": "yellowInWork",
     "Новая заявка": "blueNewQuery",
+    Некорректная: "redInvalid",
 };
 
 // Казахстанский номер: код страны отбрасывается, остаются 10 национальных
@@ -588,7 +589,11 @@ function buildQueryCard(item) {
     const statusClass = STATUS_CLASS[item.Progress] || "greyUnknown";
     const card = createElement("div", "main__catalogItem");
 
-    card.appendChild(createElement("p", "main__catalogId", item.userName));
+    const title = createElement("p", "main__catalogId", item.userName);
+    if (item.ticketNumber) {
+        title.appendChild(createElement("span", "main__catalogNumber", item.ticketNumber));
+    }
+    card.appendChild(title);
     card.appendChild(
         createElement("p", "main__catalogDate", `${parts.date} · ${parts.time}`)
     );
@@ -695,6 +700,34 @@ function checkInputs(inputs, textArea, categoryList, inputsRadio) {
  * самая новая.
  */
 function findLatestQuery(digits) {
+    const config = window.HELPDESK_CONFIG;
+
+    // Работа с заявкой идёт в корп-системе, там же меняется статус. В старом
+    // Strapi он остаётся тем, с которым заявку завели, — поэтому закрытая
+    // заявка показывалась как «Новая». Старая база — запасной источник.
+    return axios
+        .get(`${config.corpApiUrl}/api/tickets/legacy/status?phone=${encodeURIComponent(digits)}`)
+        .then((res) => {
+            const item = res.data && res.data.data;
+            if (!item) {
+                return findLatestQueryLegacy(digits);
+            }
+            return {
+                ticketNumber: item.ticketNumber,
+                userName: item.requesterName,
+                createdAt: item.createdAt,
+                userQuery: item.categoryName || item.serviceName || "",
+                userComment: item.comment,
+                Progress: item.statusLabel,
+            };
+        })
+        .catch((err) => {
+            console.warn("Статус из корп-системы недоступен, беру из старой базы", err);
+            return findLatestQueryLegacy(digits);
+        });
+}
+
+function findLatestQueryLegacy(digits) {
     const config = window.HELPDESK_CONFIG;
     const tail = digits.slice(-config.statusMatchDigits);
     const query =
