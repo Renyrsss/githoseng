@@ -68,7 +68,6 @@ document.addEventListener("DOMContentLoaded", function () {
         let query;
         let legacyCategoryId;
         let categoryId = null;
-        let service = null;
         let section = "";
         radioInput.forEach((item) => {
             if (item.checked) {
@@ -76,30 +75,18 @@ document.addEventListener("DOMContentLoaded", function () {
                 legacyCategoryId = item.id;
                 categoryId = Number(item.dataset.categoryId) || null;
                 section = item.dataset.section || "";
-                service = findService(item.dataset.serviceKey);
             }
         });
 
-        // Видно сразу, куда уйдёт заявка: раздел, бригада и какие каналы
-        // задействованы. Если бригада не определилась — Telegram и старый
-        // Strapi пропускаются, и в консоли это написано прямым текстом.
-        console.info(
-            `Заявка · раздел «${section || "?"}» → бригада ${service ? service.key : "не определена"}` +
-                ` · Strapi: ${service && service.endpoint ? "да" : "нет"}` +
-                ` · Telegram: ${service && service.botToken && service.chatId ? "да" : "нет"}`
-        );
+        // Видно сразу, что уходит: раздел и категория. Кому дальше звонить
+        // в Telegram, решает корп-система по каталогу.
+        console.info(`Заявка · раздел «${section || "?"}» → корп-система`);
 
         // В заявку уходит номер одними цифрами (77XXXXXXXXX): по нему потом
         // ищется статус, а корп-система нормализует его сама.
         const phoneDigits = readPhone(inputs[0]);
         const phoneApi = config.phoneCountryCode + phoneDigits;
 
-        let massage = `<b>Заявка  ${query}</b>\n`;
-        massage += `<b>ФИО : ${inputs[1].value}</b>\n`;
-        massage += `<b>Отделение : ${inputs[2].value}</b>\n`;
-        massage += `<b>Телеофн : ${formatPhone(phoneDigits)}</b>\n`;
-        massage += `<b>Комментарий : ${textArea.value}</b>\n`;
-        massage += `<b>Запрос : ${query}</b>\n`;
 
         const legacyPayload = {
             userName: inputs[1].value,
@@ -111,7 +98,6 @@ document.addEventListener("DOMContentLoaded", function () {
             // заявка ложится точно, без сопоставления по тексту.
             categoryId,
             legacyCategoryId,
-            legacyEndpoint: service ? service.endpoint : null,
             serviceGroupSlug: config.serviceGroupSlug,
             departmentKey: config.departmentKey,
             submissionKey,
@@ -119,51 +105,9 @@ document.addEventListener("DOMContentLoaded", function () {
 
         setSending(true);
 
-        // Старый Strapi знает только три исходные бригады, а Telegram-группа
-        // есть не у всех. Чего нет — то пропускается: заявка в любом случае
-        // уходит в корп-систему, где её видит диспетчер.
-        const legacyRequest = service && service.endpoint
-            ? axios.post(`${config.legacyApiUrl}${service.endpoint}`, {
-                  data: {
-                      userName: legacyPayload.userName,
-                      userPhone: legacyPayload.userPhone,
-                      userSide: legacyPayload.userSide,
-                      userComment: legacyPayload.userComment,
-                      userQuery: legacyPayload.userQuery,
-                  },
-              })
-            : Promise.resolve(null);
-        const telegramRequest = service && service.botToken && service.chatId
-            ? axios.post(`${config.telegramApiUrl}/bot${service.botToken}/sendMessage`, {
-                  chat_id: service.chatId,
-                  parse_mode: "html",
-                  text: massage,
-              })
-            : Promise.resolve(null);
-
-        // allSettled, а не all: недоступность корп-системы или Telegram больше
-        // не показывает ошибку по заявке, которая на самом деле создана.
-        Promise.allSettled([
-            legacyRequest,
-            axios.post(config.corpHelpdeskUrl, legacyPayload),
-            telegramRequest,
-        ])
-            .then((results) => {
-                const [legacyResult, corpResult, telegramResult] = results;
-                logRejected("Старый HelpDesk", legacyResult);
-                logRejected("Корп-система", corpResult);
-                logRejected("Telegram", telegramResult);
-
-                if (
-                    legacyResult.status === "rejected" &&
-                    corpResult.status === "rejected"
-                ) {
-                    alert(
-                        "Ошибка при отправке! Заявка не зарегистрирована, попробуйте ещё раз."
-                    );
-                    return;
-                }
-
+        axios
+            .post(config.corpHelpdeskUrl, legacyPayload)
+            .then(() => {
                 submissionKey = createSubmissionKey();
                 inputs.forEach((item) => {
                     item.value = "";
@@ -180,6 +124,10 @@ document.addEventListener("DOMContentLoaded", function () {
                 // свою только что отправленную заявку.
                 writePhone(searchInput, phoneDigits);
                 refreshQueryList();
+            })
+            .catch((err) => {
+                console.error("Заявка не отправлена", err);
+                alert("Ошибка при отправке! Заявка не зарегистрирована, попробуйте ещё раз.");
             })
             .finally(() => {
                 setSending(false);
@@ -248,7 +196,6 @@ document.addEventListener("DOMContentLoaded", function () {
                 radio.id = item.key;
                 radio.value = item.value;
                 radio.dataset.categoryId = item.categoryId || "";
-                radio.dataset.serviceKey = item.serviceKey || "";
                 radio.dataset.section = item.section || "";
                 radio.addEventListener("change", () => {
                     updateSelectionSummary();
@@ -449,10 +396,6 @@ document.addEventListener("DOMContentLoaded", function () {
         btn.textContent = value ? "Отправляем…" : "Отправить заявку";
     }
 
-    function findService(serviceKey) {
-        if (!serviceKey) return null;
-        return config.services.find((item) => item.key === serviceKey) || null;
-    }
 });
 
 // Кэш браузера умеет держать старую страницу неделями. Сверяем версию с
@@ -499,7 +442,6 @@ function normalizeCorpCatalog(groups) {
     return roots
         .map((root) => {
             const children = group.categories.filter((item) => item.parentId === root.id);
-            const serviceKey = resolveServiceKey(root);
             const source = children.length > 0 ? children : [root];
 
             return {
@@ -509,7 +451,6 @@ function normalizeCorpCatalog(groups) {
                     key: `category-${item.id}`,
                     value: item.name_ru,
                     categoryId: item.id,
-                    serviceKey,
                     section: root.name_ru,
                 })),
             };
@@ -525,20 +466,11 @@ function normalizeStaticCatalog(groups) {
             key: item.id,
             value: item.value,
             categoryId: null,
-            serviceKey: group.key,
             section: group.title,
         })),
     }));
 }
 
-// Раздел относится к службе по названию: так работают и исходные три раздела,
-// и новые, заведённые в админке.
-function resolveServiceKey(section) {
-    const config = window.HELPDESK_CONFIG;
-    const text = `${section.name_ru || ""} ${section.slug || ""}`;
-    const rule = (config.sectionServiceRules || []).find((item) => item.match.test(text));
-    return rule ? rule.service : null;
-}
 
 const STATUS_CLASS = {
     Сделано: "greenDone",
@@ -694,23 +626,18 @@ function checkInputs(inputs, textArea, categoryList, inputsRadio) {
 }
 
 /**
- * Последняя заявка по номеру. Совпадение по хвосту номера, потому что в старых
- * записях код страны записан по-разному, а хвост из 9 цифр у казахстанского номера
- * уникален. Из каждой службы берётся одна свежая запись, показывается одна
- * самая новая.
+ * Статус последней заявки — из корп-системы. Работа с заявкой идёт там, и
+ * статус меняется там же; старый Strapi страница больше не опрашивает.
  */
 function findLatestQuery(digits) {
     const config = window.HELPDESK_CONFIG;
 
-    // Работа с заявкой идёт в корп-системе, там же меняется статус. В старом
-    // Strapi он остаётся тем, с которым заявку завели, — поэтому закрытая
-    // заявка показывалась как «Новая». Старая база — запасной источник.
     return axios
         .get(`${config.corpApiUrl}/api/tickets/legacy/status?phone=${encodeURIComponent(digits)}`)
         .then((res) => {
             const item = res.data && res.data.data;
             if (!item) {
-                return findLatestQueryLegacy(digits);
+                return null;
             }
             return {
                 ticketNumber: item.ticketNumber,
@@ -722,36 +649,7 @@ function findLatestQuery(digits) {
             };
         })
         .catch((err) => {
-            console.warn("Статус из корп-системы недоступен, беру из старой базы", err);
-            return findLatestQueryLegacy(digits);
+            console.warn("Не удалось получить статус заявки", err);
+            return null;
         });
-}
-
-function findLatestQueryLegacy(digits) {
-    const config = window.HELPDESK_CONFIG;
-    const tail = digits.slice(-config.statusMatchDigits);
-    const query =
-        `?filters[userPhone][$endsWith]=${encodeURIComponent(tail)}` +
-        `&pagination[pageSize]=1` +
-        `&sort=createdAt:desc`;
-
-    return Promise.all(
-        config.statusEndpoints.map((endpoint) =>
-            axios
-                .get(`${config.legacyApiUrl}${endpoint}${query}`)
-                .then((res) =>
-                    ((res.data && res.data.data) || []).map(
-                        (row) => row.attributes
-                    )
-                )
-                .catch((err) => {
-                    console.warn(`Не удалось загрузить статус: ${endpoint}`, err);
-                    return [];
-                })
-        )
-    ).then((groups) => {
-        const all = groups.reduce((acc, group) => acc.concat(group), []);
-        all.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-        return all[0] || null;
-    });
 }
