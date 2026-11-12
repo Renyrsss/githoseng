@@ -712,3 +712,87 @@ body::after {
         opacity: 0.35;
     }
 }
+
+/* ── Выбор отделения ───────────────────────────────────── */
+.suggest {
+    position: relative;
+}
+
+.suggest__list {
+    position: absolute;
+    z-index: 30;
+    top: calc(100% + 4px);
+    left: 0;
+    right: 0;
+    max-height: 320px;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding: 4px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-sm);
+    box-shadow: var(--shadow);
+}
+
+.suggest__item {
+    display: block;
+    width: 100%;
+    padding: 10px 12px;
+    border: 0;
+    border-radius: 8px;
+    background: none;
+    font: inherit;
+    color: var(--ink);
+    text-align: left;
+    cursor: pointer;
+}
+
+.suggest__item:hover,
+.suggest__item.is-active {
+    background: var(--blue-soft);
+    color: var(--deep);
+}
+
+.suggest__empty {
+    padding: 10px 12px;
+    font-size: 14px;
+    color: var(--muted);
+}
+
+.suggest__hint {
+    margin: 6px 2px 0;
+    font-size: 12px;
+    color: var(--muted);
+}
+
+.suggest__hint.is-error {
+    color: var(--red);
+}
+
+.suggest__manual {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin: 6px 0 0;
+    font-size: 13px;
+    color: var(--muted);
+    cursor: pointer;
+    user-select: none;
+}
+
+.suggest__manual input {
+    width: 16px;
+    height: 16px;
+    margin: 0;
+    accent-color: var(--blue);
+    cursor: pointer;
+}
+
+.suggest__manual:hover {
+    color: var(--deep);
+}
+
+.suggest__manual:has(input:checked) {
+    color: var(--deep);
+    font-weight: 600;
+}

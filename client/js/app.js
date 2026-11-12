@@ -42,7 +42,12 @@ document.addEventListener("DOMContentLoaded", function () {
     let categoryGroups = [];
     let radioInput = [];
 
+    // Подразделения: из 1С и портала, их отдаёт корп-система
+    let departments = [];
+    let departmentsRequest = null;
+
     checkAppVersion();
+    document.querySelectorAll(".departmentField").forEach(attachDepartmentPicker);
     attachPhoneMask(inputs[0]);
     attachPhoneMask(searchInput);
     forgetRequester();
@@ -61,7 +66,7 @@ document.addEventListener("DOMContentLoaded", function () {
         if (sending) {
             return;
         }
-        if (!checkInputs(inputs, textArea, categoryList, radioInput)) {
+        if (!checkInputs(inputs, textArea, categoryList, radioInput, departments)) {
             return;
         }
 
@@ -112,6 +117,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 inputs.forEach((item) => {
                     item.value = "";
                     delete item.dataset.digits;
+                    delete item.dataset.department;
                 });
                 textArea.value = "";
                 radioInput.forEach((item) => {
@@ -307,6 +313,202 @@ document.addEventListener("DOMContentLoaded", function () {
         if (statusHint) {
             statusHint.textContent = text;
         }
+    }
+
+    // ── Отделение ────────────────────────────────────────────
+    function loadDepartments() {
+        if (!departmentsRequest) {
+            departmentsRequest = axios
+                .get(`${config.corpApiUrl}/api/tickets/legacy/departments`)
+                .then((res) => {
+                    departments = ((res.data && res.data.data) || [])
+                        .map((item) => item.name_ru)
+                        .filter(Boolean);
+                    if (departments.length === 0) {
+                        throw new Error("Список отделений пуст");
+                    }
+                    return departments;
+                })
+                .catch((err) => {
+                    // Корп-система недоступна — берём снимок из репозитория.
+                    // Пустое поле хуже устаревшего списка: в него пишут что попало.
+                    departments = window.HELPDESK_DEPARTMENTS || [];
+                    console.warn(
+                        departments.length > 0
+                            ? `Корп-система недоступна, беру список отделений из снимка (${departments.length})`
+                            : "Список отделений недоступен, поле останется свободным",
+                        err
+                    );
+                    if (departments.length === 0) {
+                        throw err;
+                    }
+                    return departments;
+                });
+        }
+        return departmentsRequest;
+    }
+
+    /**
+     * Отделение выбирается из списка, а не печатается: раньше в это поле
+     * писали «ТЕСТ», «1 этаж» и прочее, и заявку некуда было отнести.
+     * Список приезжает из корп-системы — там он собирается из 1С вместе с
+     * карточками сотрудников. Если список не пришёл, поле остаётся обычным
+     * текстовым, иначе форма стала бы неотправляемой из-за чужого сбоя.
+     */
+    function attachDepartmentPicker(input) {
+        if (!input) {
+            return;
+        }
+
+        const list = input.parentNode.querySelector(".suggest__list");
+        const row = input.parentNode.parentNode;
+        const hint = row.querySelector(".suggest__hint");
+        const manual = row.querySelector("[data-manual]");
+
+        // Отделения приезжают из 1С, и там бывает не всё: командированные,
+        // подрядчики, новые подразделения. Галочка снимает проверку по списку
+        // для этого поля — человек пишет своё, заявка не застревает. Снятая
+        // галочка возвращает поле к выбору из списка: передумать можно в любой
+        // момент, не перезагружая страницу.
+        if (manual) {
+            const label = row.querySelector(".fieldRow__label");
+            const listLabel = label ? label.textContent : "";
+            const listHint = hint ? hint.textContent : "";
+            const listPlaceholder = input.placeholder;
+
+            manual.addEventListener("change", () => {
+                if (manual.checked) {
+                    input.dataset.manual = "1";
+                    delete input.dataset.department;
+                    close();
+                    if (label) label.textContent = "Отдел · впишите вручную";
+                    input.placeholder = "Например: Отдел логистики";
+                    if (hint) hint.textContent = "Впишите название своего отдела";
+                } else {
+                    delete input.dataset.manual;
+                    // Вписанное вручную в списке обычно не находится, и поиск
+                    // сразу показал бы «ничего не нашлось». Оставляем только то,
+                    // что в списке есть.
+                    if (!departments.includes(input.value.trim())) {
+                        input.value = "";
+                    }
+                    if (label) label.textContent = listLabel;
+                    input.placeholder = listPlaceholder;
+                    if (hint) hint.textContent = listHint;
+                    render();
+                }
+                input.classList.remove("is-invalid");
+                if (hint) hint.classList.remove("is-error");
+                input.focus();
+            });
+        }
+        let active = -1;
+        let shown = [];
+
+        loadDepartments()
+            .then(() => {
+                // Список приезжает уже после загрузки страницы. Перерисовываем
+                // только если человек в это время стоит в поле — иначе
+                // подсказки раскрывались бы сами собой при каждом заходе.
+                if (!list.hidden) {
+                    render();
+                }
+            })
+            .catch(() => {
+                if (hint) hint.textContent = "Список отделений недоступен — впишите вручную";
+            });
+
+        const close = () => {
+            list.hidden = true;
+            list.innerHTML = "";
+            active = -1;
+            shown = [];
+        };
+
+        const choose = (name) => {
+            input.value = name;
+            input.dataset.department = name;
+            input.classList.remove("is-invalid");
+            if (hint) {
+                hint.textContent = "Выберите своё отделение из списка";
+                hint.classList.remove("is-error");
+            }
+            close();
+        };
+
+        const render = () => {
+            if (input.dataset.manual === "1") {
+                close();
+                return;
+            }
+            const needle = input.value;
+            // Показываем все совпадения: список прокручивается, а обрезка до
+            // восьми строк прятала половину отделений — их почти восемьдесят.
+            shown = rankMatches(departments, needle);
+            list.innerHTML = "";
+
+            if (departments.length === 0) {
+                close();
+                return;
+            }
+
+            if (shown.length === 0) {
+                const empty = createElement("p", "suggest__empty", "Ничего не нашлось — проверьте написание");
+                list.appendChild(empty);
+                list.hidden = false;
+                return;
+            }
+
+            if (hint) {
+                hint.textContent =
+                    needle.trim() === ""
+                        ? `Выберите своё отделение из списка (${departments.length})`
+                        : `Найдено: ${shown.length}`;
+                hint.classList.remove("is-error");
+            }
+
+            shown.forEach((name, index) => {
+                const item = createElement("button", "suggest__item", name);
+                item.type = "button";
+                if (index === active) item.classList.add("is-active");
+                item.addEventListener("mousedown", (e) => {
+                    e.preventDefault();
+                    choose(name);
+                });
+                list.appendChild(item);
+            });
+            list.hidden = false;
+        };
+
+        input.addEventListener("input", () => {
+            delete input.dataset.department;
+            active = -1;
+            render();
+        });
+
+        input.addEventListener("focus", render);
+
+        input.addEventListener("blur", () => {
+            window.setTimeout(close, 120);
+        });
+
+        input.addEventListener("keydown", (e) => {
+            if (list.hidden || shown.length === 0) {
+                return;
+            }
+            if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+                e.preventDefault();
+                active = e.key === "ArrowDown"
+                    ? (active + 1) % shown.length
+                    : (active - 1 + shown.length) % shown.length;
+                render();
+            } else if (e.key === "Enter") {
+                e.preventDefault();
+                choose(shown[active >= 0 ? active : 0]);
+            } else if (e.key === "Escape") {
+                close();
+            }
+        });
     }
 
     // ── Телефон ──────────────────────────────────────────────
@@ -581,16 +783,169 @@ function logRejected(label, result) {
     }
 }
 
-function checkInputs(inputs, textArea, categoryList, inputsRadio) {
+// ── Умный поиск по названиям ─────────────────────────────
+// Как в MedBridge: порядок слов не важен, «ё» = «е», можно набрать в
+// английской раскладке («rfhlbj» → «кардио»), транслитом («kardio») и с
+// опечаткой в длинном слове. Названия отделений встречаются и латиницей —
+// «Отдел IT», «ОЦМК», — поэтому слово ищется ещё и в транслитерации.
+const SEARCH_LATIN_KEYS = "qwertyuiop[]asdfghjkl;'zxcvbnm,.`";
+const SEARCH_CYRILLIC_KEYS = "йцукенгшщзхъфывапролджэячсмитьбюё";
+const SEARCH_TRANSLIT = {
+    а: "a", б: "b", в: "v", г: "g", д: "d", е: "e", ж: "zh", з: "z", и: "i",
+    й: "i", к: "k", л: "l", м: "m", н: "n", о: "o", п: "p", р: "r", с: "s",
+    т: "t", у: "u", ф: "f", х: "h", ц: "c", ч: "ch", ш: "sh", щ: "sch",
+    ы: "y", э: "e", ю: "yu", я: "ya", ъ: "", ь: "",
+    ә: "a", ғ: "g", қ: "k", ң: "n", ө: "o", ұ: "u", ү: "u", һ: "h", і: "i",
+};
+
+function normalizeSearchText(value) {
+    return String(value || "")
+        .toLowerCase()
+        .replace(/ё/g, "е")
+        .replace(/[^0-9a-zа-яәғқңөұүһі]+/g, " ")
+        .trim();
+}
+
+function transliterate(value) {
+    return String(value || "")
+        .split("")
+        .map((char) => (SEARCH_TRANSLIT[char] !== undefined ? SEARCH_TRANSLIT[char] : char))
+        .join("");
+}
+
+function swapKeyboardLayout(value) {
+    return String(value || "")
+        .toLowerCase()
+        .split("")
+        .map((char) => {
+            const latin = SEARCH_LATIN_KEYS.indexOf(char);
+            if (latin !== -1) return SEARCH_CYRILLIC_KEYS[latin] || char;
+            const cyrillic = SEARCH_CYRILLIC_KEYS.indexOf(char);
+            if (cyrillic !== -1) return SEARCH_LATIN_KEYS[cyrillic] || char;
+            return char;
+        })
+        .join("");
+}
+
+// Отличаются не больше чем на limit букв (вставка, удаление, замена)
+function withinTypos(left, right, limit) {
+    if (Math.abs(left.length - right.length) > limit) return false;
+    let previous = [];
+    for (let j = 0; j <= right.length; j += 1) previous.push(j);
+    for (let i = 1; i <= left.length; i += 1) {
+        const current = [i];
+        let rowMin = i;
+        for (let j = 1; j <= right.length; j += 1) {
+            current[j] = Math.min(
+                current[j - 1] + 1,
+                previous[j] + 1,
+                previous[j - 1] + (left[i - 1] === right[j - 1] ? 0 : 1)
+            );
+            rowMin = Math.min(rowMin, current[j]);
+        }
+        if (rowMin > limit) return false;
+        previous = current;
+    }
+    return previous[right.length] <= limit;
+}
+
+function uniqueFilled(list) {
+    return list.filter((item, index) => item && list.indexOf(item) === index);
+}
+
+function wordMatches(word, haystack, words) {
+    if (haystack.indexOf(word) !== -1) return true;
+    if (word.length < 4) return false;
+    // Опечатка: в слове целиком или в его начале — человек мог не дописать
+    const limit = word.length >= 8 ? 2 : 1;
+    return words.some(
+        (candidate) =>
+            withinTypos(word, candidate, limit) ||
+            withinTypos(word, candidate.slice(0, word.length), limit)
+    );
+}
+
+function matchesQuery(option, needle) {
+    const typed = normalizeSearchText(needle);
+    if (!typed) return true;
+    // Другая раскладка — только если не потерялось ни одной буквы: русское
+    // «бухг» в английской раскладке — «,e[u», то есть «e u», и две буквы
+    // нашли бы почти всё подряд
+    const swapped = normalizeSearchText(swapKeyboardLayout(needle));
+    const letters = (text) => String(text || "").replace(/\s+/g, "").length;
+    const swappedWhole = letters(swapped) === letters(needle);
+    // «,e[u» — это «бухг» в чужой раскладке: знаки съели половину букв, и
+    // искать по остаткам «e u» не нужно
+    const queries =
+        swappedWhole && letters(typed) < letters(needle)
+            ? [swapped]
+            : uniqueFilled([typed, swappedWhole ? swapped : "", normalizeSearchText(transliterate(typed))]);
+    const base = normalizeSearchText(option);
+    const targets = uniqueFilled([base, normalizeSearchText(transliterate(base))]);
+    return queries.some((query) => {
+        const words = query.split(" ").filter(Boolean);
+        return targets.some((target) => {
+            const targetWords = target.split(" ");
+            return words.every((word) => wordMatches(word, target, targetWords));
+        });
+    });
+}
+
+// Совпавшие названия: сначала те, что начинаются с набранного, потом по алфавиту
+function rankMatches(list, needle) {
+    const typed = normalizeSearchText(needle);
+    if (!typed) return list.slice();
+    const first = typed.split(" ")[0];
+    return list
+        .filter((name) => matchesQuery(name, needle))
+        .map((name) => {
+            const hay = normalizeSearchText(name);
+            let rank = 3;
+            if (hay.indexOf(typed) === 0) rank = 0;
+            else if (hay.split(" ").some((word) => word.indexOf(first) === 0)) rank = 1;
+            else if (hay.indexOf(typed) !== -1) rank = 2;
+            return { name, rank };
+        })
+        .sort((a, b) => a.rank - b.rank || a.name.localeCompare(b.name, "ru"))
+        .map((item) => item.name);
+}
+
+function matchesExactly(option, typed) {
+    return normalizeSearchText(option) === normalizeSearchText(typed);
+}
+
+function checkInputs(inputs, textArea, categoryList, inputsRadio, departments) {
     const config = window.HELPDESK_CONFIG;
     let res = true;
     let firstInvalid = null;
+    const hasDepartmentList = Array.isArray(departments) && departments.length > 0;
 
     inputs.forEach((element) => {
         const isPhone = element.classList.contains("phoneField");
-        const invalid = isPhone
-            ? (element.dataset.digits || "").length !== config.phoneNationalLength
-            : element.value.trim() === "";
+        const isDepartment = element.classList.contains("departmentField");
+        let invalid;
+
+        if (isPhone) {
+            invalid = (element.dataset.digits || "").length !== config.phoneNationalLength;
+        } else if (isDepartment && hasDepartmentList && element.dataset.manual !== "1") {
+            // Отделение должно быть выбрано из списка, а не набрано на глаз.
+            const typed = element.value.trim();
+            const exact = departments.find((name) => matchesExactly(name, typed));
+            if (exact) {
+                element.value = exact;
+                element.dataset.department = exact;
+            }
+            invalid = !exact;
+            const hint = element.parentNode.parentNode.querySelector(".suggest__hint");
+            if (hint) {
+                hint.textContent = invalid
+                    ? "Такого отделения нет в списке — выберите из подсказок"
+                    : "Выберите своё отделение из списка";
+                hint.classList.toggle("is-error", invalid);
+            }
+        } else {
+            invalid = element.value.trim() === "";
+        }
 
         element.classList.toggle("is-invalid", invalid);
         if (invalid) {

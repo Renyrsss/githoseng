@@ -10,7 +10,7 @@ window.HELPDESK_CONFIG = {
     // Версия выката. Должна совпадать с client/version.json: страница сверяет
     // их при загрузке и, если разошлись, перезагружает себя сама — так
     // застрявший в кэше index.html лечится без Ctrl+Shift+R.
-    appVersion: "2026-08-26-2",
+    appVersion: "2026-11-12-1",
 
     corpApiUrl: "http://192.168.101.25:12010",
     corpHelpdeskUrl: "http://192.168.101.25:12010/api/tickets/legacy/submit",

@@ -4,7 +4,7 @@
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <title>HelpDesk — Хозяйственная служба ННМЦ</title>
-        <link rel="stylesheet" href="./css/app.css?v=13" />
+        <link rel="stylesheet" href="./css/app.css?v=14" />
         <link
             rel="shortcut icon"
             href="./img/favicon.ico"
@@ -105,15 +105,25 @@
                         />
                     </label>
 
-                    <label class="fieldRow">
+                    <div class="fieldRow">
                         <span class="fieldRow__label">Бөлімше / Отделение</span>
-                        <input
-                            type="text"
-                            class="field main__inputs"
-                            name="department"
-                            placeholder="Терапия, 3 этаж"
-                        />
-                    </label>
+                        <div class="suggest">
+                            <input
+                                type="text"
+                                class="field main__inputs departmentField"
+                                name="department"
+                                autocomplete="off"
+                                placeholder="Начните вводить название"
+                                aria-label="Отделение"
+                            />
+                            <div class="suggest__list" hidden></div>
+                        </div>
+                        <p class="suggest__hint">Выберите своё отделение из списка</p>
+                        <label class="suggest__manual">
+                            <input type="checkbox" data-manual />
+                            <span>Моего отдела нет в списке</span>
+                        </label>
+                    </div>
 
                     <div class="panel__head panel__head--tight">
                         <span class="step">3</span>
@@ -192,8 +202,9 @@
         </div>
 
         <script src="./js/axios.min.js"></script>
-        <script src="./js/config.js?v=13"></script>
-        <script src="./js/categories.js?v=13"></script>
-        <script src="./js/app.js?v=13"></script>
+        <script src="./js/config.js?v=14"></script>
+        <script src="./js/categories.js?v=14"></script>
+        <script src="./js/departments.js?v=14"></script>
+        <script src="./js/app.js?v=14"></script>
     </body>
 </html>
